@@ -21,3 +21,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Android release signing key (back this up privately, never commit)
+keystore/

@@ -538,7 +538,7 @@ export function TrustStrip() {
       />
 
       {/* Floating 3D Graphic - Left (Book & Airplane) */}
-      <div className="pointer-events-none absolute left-2 sm:left-6 md:left-10 lg:left-14 top-8 sm:top-10 w-24 sm:w-32 md:w-40 lg:w-48 z-0 opacity-90 sm:opacity-100 transition-all duration-700">
+      <div className="pointer-events-none hidden sm:block absolute left-2 sm:left-6 md:left-10 lg:left-14 top-8 sm:top-10 w-24 sm:w-32 md:w-40 lg:w-48 z-0 opacity-90 sm:opacity-100 transition-all duration-700">
         <div className="relative overflow-hidden rounded-full [mask-image:radial-gradient(circle_at_center,black_55%,transparent_75%)]">
           <img
             src={bookAirplaneImg}
@@ -550,7 +550,7 @@ export function TrustStrip() {
       </div>
 
       {/* Floating 3D Graphic - Right (Graduation Cap & Sparkles) */}
-      <div className="pointer-events-none absolute right-2 sm:right-6 md:right-10 lg:right-14 top-8 sm:top-10 w-24 sm:w-32 md:w-40 lg:w-48 z-0 opacity-90 sm:opacity-100 transition-all duration-700">
+      <div className="pointer-events-none hidden sm:block absolute right-2 sm:right-6 md:right-10 lg:right-14 top-8 sm:top-10 w-24 sm:w-32 md:w-40 lg:w-48 z-0 opacity-90 sm:opacity-100 transition-all duration-700">
         <div className="relative overflow-hidden rounded-full [mask-image:radial-gradient(circle_at_center,black_55%,transparent_75%)]">
           <img
             src={gradCapImg}

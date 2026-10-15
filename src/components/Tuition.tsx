@@ -19,11 +19,11 @@ export function Tuition() {
           subtitle="Find online, offline and home tuition for academics plus skill classes in chess, silambam, yoga and spoken English."
         />
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rail mt-8 sm:mt-12 md:grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {tuitions.map((t, i) => (
             <article
               key={t.id}
-              className="card card-hover p-6 flex flex-col animate-fadeUp"
+              className="card card-hover p-5 sm:p-6 flex flex-col animate-fadeUp"
               style={{ animationDelay: `${i * 70}ms` }}
             >
               <div className="flex items-center justify-between">
@@ -43,13 +43,13 @@ export function Tuition() {
 
               <div className="mt-3 text-xs font-semibold text-ink-500">{t.level}</div>
 
-              <div className="mt-4 flex flex-wrap gap-1.5">
+              <div className="mt-4 mb-5 flex flex-wrap gap-1.5">
                 {t.skills.map((s) => (
                   <span key={s} className="chip bg-slate-50 text-ink-700 ring-1 ring-slate-100">{s}</span>
                 ))}
               </div>
 
-              <a href="#register" className="btn-outline text-sm mt-5 w-full">Enquire now</a>
+              <a href="#register" className="btn-outline text-sm mt-auto w-full">Enquire now</a>
             </article>
           ))}
         </div>

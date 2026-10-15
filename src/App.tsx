@@ -11,6 +11,7 @@ import { Register } from '@/components/Register';
 import { About } from '@/components/About';
 import { Contact } from '@/components/Contact';
 import { Footer } from '@/components/Footer';
+import { MobileNav } from '@/components/MobileNav';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Contact />
       </main>
       <Footer />
+      <MobileNav />
     </div>
   );
 }

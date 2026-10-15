@@ -15,29 +15,30 @@ export function Contact() {
           subtitle="Questions about admissions, listings, jobs or events? Reach out and our team will respond within one business day."
         />
 
-        <div className="mt-12 grid lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-5 space-y-4">
+        <div className="mt-8 sm:mt-12 grid lg:grid-cols-12 gap-6 sm:gap-8">
+          <div className="lg:col-span-5 space-y-3 sm:space-y-4">
             {[
-              { icon: Phone, label: 'Call us', value: '+91 98765 43210', sub: 'Mon–Sat, 9am–7pm' },
-              { icon: Mail, label: 'Email', value: 'support@padasala.in', sub: 'We reply within 24 hours' },
+              { icon: Phone, label: 'Call us', value: '+91 98765 43210', sub: 'Mon–Sat, 9am–7pm', href: 'tel:+919876543210' },
+              { icon: Mail, label: 'Email', value: 'support@padasala.in', sub: 'We reply within 24 hours', href: 'mailto:support@padasala.in' },
               { icon: MapPin, label: 'Office', value: 'Coimbatore, Tamil Nadu, India', sub: 'Registered education platform' },
             ].map((c) => {
               const Icon = c.icon;
+              const Tag = c.href ? 'a' : 'div';
               return (
-                <div key={c.label} className="card p-5 flex items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
+                <Tag key={c.label} href={c.href} className="card p-4 sm:p-5 flex items-start gap-3.5 sm:gap-4">
+                  <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">{c.label}</div>
                     <div className="font-display font-bold text-ink-900">{c.value}</div>
                     <div className="text-sm text-ink-500">{c.sub}</div>
                   </div>
-                </div>
+                </Tag>
               );
             })}
 
-            <div className="card p-5">
+            <div className="card p-4 sm:p-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
                   <MessageSquare className="h-5 w-5" />
@@ -51,7 +52,7 @@ export function Contact() {
           </div>
 
           <div className="lg:col-span-7">
-            <div className="glass rounded-[2rem] p-6 sm:p-8">
+            <div className="glass rounded-[1.75rem] sm:rounded-[2rem] p-5 sm:p-8">
               {sent ? (
                 <div className="text-center py-14">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">

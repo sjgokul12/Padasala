@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Padasala</string>
+    <string name="title_activity_main">Padasala</string>
+    <string name="package_name">com.padasala.app</string>
+    <string name="custom_url_scheme">com.padasala.app</string>
+</resources>

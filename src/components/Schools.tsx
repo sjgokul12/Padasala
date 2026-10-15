@@ -26,12 +26,15 @@ export function Schools() {
     setStartIndex((prev) => (prev >= schools.length - 2 ? 0 : prev + 1));
   };
 
-  const visibleSchools = schools.slice(startIndex, startIndex + 2).length === 2
-    ? schools.slice(startIndex, startIndex + 2)
-    : schools.slice(0, 2);
+  const visibleIds = new Set(
+    (schools.slice(startIndex, startIndex + 2).length === 2
+      ? schools.slice(startIndex, startIndex + 2)
+      : schools.slice(0, 2)
+    ).map((s) => s.id),
+  );
 
   return (
-    <section id="schools" className="relative overflow-hidden py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-[#f0f9ff]/60 via-[#f8fafc] to-white">
+    <section id="schools" className="relative overflow-hidden py-14 sm:py-20 lg:py-24 bg-gradient-to-b from-[#f0f9ff]/60 via-[#f8fafc] to-white">
       {/* Subtle Background Glows */}
       <div className="absolute top-0 right-1/4 h-96 w-96 rounded-full bg-sky-200/30 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/4 h-96 w-96 rounded-full bg-blue-200/20 blur-3xl pointer-events-none" />
@@ -47,13 +50,13 @@ export function Schools() {
             </span>
 
             {/* Main Headline */}
-            <h2 className="mt-4 font-display text-3xl sm:text-4xl lg:text-[44px] font-extrabold tracking-tight text-[#0b1f33] leading-[1.18] text-balance">
+            <h2 className="mt-4 font-display text-[26px] sm:text-4xl lg:text-[44px] font-extrabold tracking-tight text-[#0b1f33] leading-[1.18] text-balance">
               Discover schools that fit{' '}
               <span className="text-[#0284c7]">your child’s future</span>
             </h2>
 
             {/* Subtitle */}
-            <p className="mt-3 text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
+            <p className="mt-3 text-[15px] sm:text-lg text-slate-600 leading-relaxed font-normal">
               Search by location, board, facilities and grade level. Compare profiles and apply for admission directly.
             </p>
 
@@ -65,7 +68,7 @@ export function Schools() {
           <div className="animate-fadeUp self-start lg:self-end">
             <a
               href="#register"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#0088ff] to-[#0070e0] hover:from-[#0070e0] hover:to-[#005bb5] px-7 py-3 text-base font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:shadow-xl hover:shadow-sky-500/35 hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#0088ff] to-[#0070e0] hover:from-[#0070e0] hover:to-[#005bb5] px-5 sm:px-7 py-2.5 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:shadow-xl hover:shadow-sky-500/35 hover:-translate-y-0.5 active:translate-y-0 shrink-0"
             >
               <span>View all schools</span>
               <ArrowRight className="h-4 w-4 stroke-[2.5]" />
@@ -74,7 +77,7 @@ export function Schools() {
         </div>
 
         {/* Schools Carousel Container with Prev / Next Buttons */}
-        <div className="relative mt-12 sm:mt-14">
+        <div className="relative mt-8 sm:mt-14">
           
           {/* Navigation Arrows */}
           <button
@@ -96,14 +99,15 @@ export function Schools() {
           </button>
 
           {/* Cards Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:gap-8">
-            {visibleSchools.map((s, idx) => (
+          {/* Phones: swipe through every school. Tablet/desktop: two at a time with arrows. */}
+          <div className="rail md:grid gap-6 md:grid-cols-2 lg:gap-8">
+            {schools.map((s, idx) => (
               <article
                 key={s.id}
-                className="group relative rounded-[32px] bg-white border border-slate-100/90 shadow-[0_12px_35px_rgba(0,0,0,0.06)] p-4 sm:p-5 transition-all duration-300 hover:shadow-[0_20px_45px_rgba(2,132,199,0.12)] hover:border-sky-200 hover:-translate-y-1 flex flex-col sm:flex-row gap-5"
+                className={`group relative rounded-[26px] sm:rounded-[32px] bg-white border border-slate-100/90 shadow-[0_12px_35px_rgba(0,0,0,0.06)] p-3.5 sm:p-5 ${visibleIds.has(s.id) ? '' : 'md:hidden'} transition-all duration-300 hover:shadow-[0_20px_45px_rgba(2,132,199,0.12)] hover:border-sky-200 hover:-translate-y-1 flex flex-col sm:flex-row gap-4 sm:gap-5`}
               >
                 {/* Left Column: School Image with Overlay Badges */}
-                <div className="relative w-full sm:w-[42%] lg:w-[44%] min-h-[220px] sm:min-h-[260px] rounded-2xl overflow-hidden shrink-0 bg-slate-100">
+                <div className="relative w-full sm:w-[42%] lg:w-[44%] h-44 sm:h-auto sm:min-h-[260px] rounded-2xl overflow-hidden shrink-0 bg-slate-100">
                   <img
                     src={s.image}
                     alt={s.name}
@@ -170,11 +174,13 @@ export function Schools() {
                           </h3>
                           
                           {/* Location & Grade */}
-                          <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium text-slate-500">
                             <MapPin className="h-3.5 w-3.5 text-[#0284c7] shrink-0" />
-                            <span>{s.location}</span>
-                            <span className="text-slate-300">•</span>
-                            <span>{s.grades}</span>
+                            <span className="whitespace-nowrap">{s.location}</span>
+                            <span className="whitespace-nowrap">
+                              <span className="text-slate-300 mr-1.5">•</span>
+                              {s.grades}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -240,26 +246,9 @@ export function Schools() {
             ))}
           </div>
 
-          {/* Mobile pagination indicators */}
-          <div className="mt-6 flex items-center justify-center gap-2 sm:hidden">
-            <button
-              type="button"
-              onClick={handlePrev}
-              className="h-8 w-8 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-600"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-xs font-semibold text-slate-500">
-              {startIndex + 1} - {Math.min(startIndex + 2, schools.length)} of {schools.length}
-            </span>
-            <button
-              type="button"
-              onClick={handleNext}
-              className="h-8 w-8 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-600"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          <p className="md:hidden text-center text-xs font-semibold text-slate-400">
+            Swipe to see all {schools.length} schools →
+          </p>
 
         </div>
 

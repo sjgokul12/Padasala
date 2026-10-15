@@ -38,11 +38,21 @@ const categoryBadgesRight: Record<string, { icon: typeof Swords; bg: string; col
 export function Events() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activePage, setActivePage] = useState(0);
-  const totalPages = 5;
+  const totalPages = events.length;
+
+  // On phones the cards are a swipe row; keep the dots in sync with the swipe position.
+  const syncActivePage = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 0) return;
+    setActivePage(Math.round((el.scrollLeft / maxScroll) * (totalPages - 1)));
+  };
 
   const handleScroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return;
-    const amount = 340;
+    const card = scrollRef.current.firstElementChild as HTMLElement | null;
+    const amount = card ? card.offsetWidth + 14 : 340;
     scrollRef.current.scrollBy({
       left: direction === 'left' ? -amount : amount,
       behavior: 'smooth',
@@ -65,7 +75,7 @@ export function Events() {
   return (
     <section
       id="events"
-      className="relative overflow-hidden bg-gradient-to-b from-[#f0f7ff] via-white to-[#f4f9ff] py-16 sm:py-20 lg:py-24 select-none"
+      className="relative overflow-hidden bg-gradient-to-b from-[#f0f7ff] via-white to-[#f4f9ff] py-14 sm:py-20 lg:py-24 select-none"
     >
       {/* Decorative Atmosphere Radial Aura */}
       <div
@@ -74,7 +84,7 @@ export function Events() {
       />
 
       {/* Floating 3D Graphic - Top Left (Book & Paper Airplane) */}
-      <div className="pointer-events-none absolute left-2 sm:left-6 md:left-10 lg:left-12 top-6 sm:top-8 w-24 sm:w-36 md:w-44 lg:w-48 z-0 opacity-85 sm:opacity-95">
+      <div className="pointer-events-none hidden sm:block absolute left-2 sm:left-6 md:left-10 lg:left-12 top-6 sm:top-8 w-24 sm:w-36 md:w-44 lg:w-48 z-0 opacity-85 sm:opacity-95">
         <div className="relative overflow-hidden rounded-full [mask-image:radial-gradient(circle_at_center,black_50%,transparent_75%)]">
           <img
             src={bookAirplaneImg}
@@ -86,7 +96,7 @@ export function Events() {
       </div>
 
       {/* Floating 3D Graphic - Top Right (3D Calendar & Slogan) */}
-      <div className="pointer-events-none absolute right-2 sm:right-6 md:right-10 lg:right-14 top-6 sm:top-8 z-0 flex flex-col items-end opacity-90">
+      <div className="pointer-events-none absolute right-2 sm:right-6 md:right-10 lg:right-14 top-6 sm:top-8 z-0 hidden sm:flex flex-col items-end opacity-90">
         <div className="w-20 sm:w-28 md:w-36 relative overflow-hidden rounded-full [mask-image:radial-gradient(circle_at_center,black_50%,transparent_75%)]">
           <img
             src={calendar3dImg}
@@ -117,7 +127,7 @@ export function Events() {
         </div>
 
         {/* Main Heading */}
-        <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+        <h2 className="font-display text-[26px] sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
           What's happening{' '}
           <span className="text-slate-900">in schools </span>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 underline decoration-amber-400 decoration-wavy decoration-2">
@@ -126,16 +136,17 @@ export function Events() {
         </h2>
 
         {/* Subtitle */}
-        <p className="mt-3 text-xs sm:text-sm md:text-base font-semibold text-slate-500 tracking-wide max-w-2xl mx-auto">
+        <p className="mt-3 text-sm md:text-base font-medium sm:font-semibold text-slate-500 sm:tracking-wide max-w-2xl mx-auto">
           Sports, cultural, academic and workshop events posted by schools — register online and get reminders before the event.
         </p>
       </div>
 
       {/* Cards Grid / Scrollable Container */}
-      <div className="container-page relative z-10 mt-10 sm:mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container-page relative z-10 mt-6 sm:mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={scrollRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
+          onScroll={syncActivePage}
+          className="rail [--rail-gutter:16px] md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
         >
           {events.map((e, idx) => {
             const badge = categoryBadges[e.category] ?? {
@@ -246,7 +257,7 @@ export function Events() {
         </div>
 
         {/* Carousel Navigation Controls & Pagination */}
-        <div className="mt-8 sm:mt-10 flex items-center justify-center gap-4">
+        <div className="mt-2 md:mt-10 flex items-center justify-center gap-4">
           {/* Left Arrow Button */}
           <button
             type="button"

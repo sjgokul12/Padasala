@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { GraduationCap, Menu, X, ArrowRight } from 'lucide-react';
+import { GraduationCap, Menu, X, ArrowRight, Download } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+
+// The Android APK is served from public/downloads. Hide the button inside the app itself.
+const APK_URL = '/downloads/padasala.apk';
+const showDownload = !Capacitor.isNativePlatform();
 
 const nav = [
   { label: 'Home', href: '#home', active: true },
@@ -48,7 +53,7 @@ export function Header() {
               <a
                 key={n.href}
                 href={n.href}
-                className={`relative px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                className={`relative whitespace-nowrap px-2 xl:px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                   n.active
                     ? 'text-[#0284c7]'
                     : 'text-slate-600 hover:text-[#0284c7]'
@@ -63,7 +68,19 @@ export function Header() {
           </nav>
 
           {/* Action Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
+            {showDownload && (
+              <a
+                href={APK_URL}
+                download="Padasala.apk"
+                aria-label="Download Android app"
+                title="Download Android app"
+                className="inline-flex h-9 2xl:h-auto w-9 2xl:w-auto items-center justify-center gap-1.5 whitespace-nowrap rounded-full 2xl:px-4 2xl:py-2 text-sm font-semibold text-[#0284c7] ring-1 ring-sky-200 bg-sky-50/80 hover:bg-sky-100 transition shadow-sm"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden 2xl:inline">Download App</span>
+              </a>
+            )}
             <a
               href="#search"
               aria-label="Search"
@@ -75,27 +92,39 @@ export function Header() {
             </a>
             <a
               href="#login"
-              className="rounded-full px-5 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200/80 bg-white/70 hover:bg-white transition shadow-sm"
+              className="rounded-full px-4 xl:px-5 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200/80 bg-white/70 hover:bg-white transition shadow-sm"
             >
               Login
             </a>
             <a
               href="#register"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-5 py-2 text-sm font-semibold text-white shadow-md shadow-sky-500/25 transition-all hover:shadow-lg hover:shadow-sky-500/35 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-4 xl:px-5 py-2 text-sm font-semibold text-white shadow-md shadow-sky-500/25 transition-all hover:shadow-lg hover:shadow-sky-500/35 hover:-translate-y-0.5"
             >
               Register
               <ArrowRight className="h-4 w-4" />
             </a>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="lg:hidden flex h-9 w-9 items-center justify-center rounded-full bg-white/80 ring-1 ring-slate-200 text-slate-700"
-            aria-label="Toggle menu"
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          {/* Mobile Actions */}
+          <div className="lg:hidden flex items-center gap-2">
+            {showDownload && (
+              <a
+                href={APK_URL}
+                download="Padasala.apk"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-[#009bf8] to-[#0062f5] shadow-sm shadow-sky-500/25"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden min-[380px]:inline">Get App</span>
+              </a>
+            )}
+            <button
+              onClick={() => setOpen((v) => !v)}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 ring-1 ring-slate-200 text-slate-700"
+              aria-label="Toggle menu"
+            >
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Dropdown */}
@@ -129,6 +158,16 @@ export function Header() {
                 >
                   Register <ArrowRight className="h-4 w-4" />
                 </a>
+                {showDownload && (
+                  <a
+                    href={APK_URL}
+                    download="Padasala.apk"
+                    onClick={() => setOpen(false)}
+                    className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-50 ring-1 ring-sky-200 py-2.5 text-sm font-semibold text-[#0284c7]"
+                  >
+                    <Download className="h-4 w-4" /> Download Android App
+                  </a>
+                )}
               </div>
             </nav>
           </div>

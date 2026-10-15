@@ -16,17 +16,17 @@ export function Register() {
   return (
     <section id="register" className="section bg-gradient-to-b from-white via-brand-50/30 to-brand-50/50">
       <div className="container-page">
-        <div className="grid lg:grid-cols-12 gap-10 items-stretch">
+        <div className="grid lg:grid-cols-12 gap-8 sm:gap-10 items-stretch">
           <div className="lg:col-span-5">
             <span className="eyebrow mb-4">Join Padasala</span>
-            <h2 className="heading text-3xl sm:text-4xl leading-[1.1] text-balance">
+            <h2 className="heading text-[26px] sm:text-4xl leading-[1.15] sm:leading-[1.1] text-balance">
               One account for everything education
             </h2>
-            <p className="mt-4 text-ink-500 leading-relaxed">
+            <p className="mt-3 sm:mt-4 text-[15px] sm:text-base text-ink-500 leading-relaxed">
               Pick your role and create a free account. Students discover schools and courses, schools manage admissions and posts, teachers apply for jobs, and tuition centres reach more learners.
             </p>
 
-            <div className="mt-6 grid sm:grid-cols-2 gap-3">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 gap-2.5 sm:gap-3">
               {roles.map((r) => {
                 const Icon = r.icon;
                 const isActive = r.id === role;
@@ -34,17 +34,17 @@ export function Register() {
                   <button
                     key={r.id}
                     onClick={() => { setRole(r.id); setSubmitted(false); }}
-                    className={`text-left rounded-2xl p-4 ring-1 transition-all ${
+                    className={`text-left rounded-2xl p-3 sm:p-4 ring-1 transition-all ${
                       isActive
                         ? 'bg-brand-600 text-white ring-brand-600 shadow-glow'
                         : 'bg-white text-ink-700 ring-slate-200 hover:ring-brand-200'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="h-5 w-5" />
-                      <span className="font-display font-bold text-sm">{r.label}</span>
+                    <div className="flex items-center gap-2 sm:gap-2.5">
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="font-display font-bold text-[13px] sm:text-sm leading-tight">{r.label}</span>
                     </div>
-                    <p className={`mt-1.5 text-xs ${isActive ? 'text-white/80' : 'text-ink-500'}`}>{r.desc}</p>
+                    <p className={`mt-1.5 text-[11px] sm:text-xs leading-snug ${isActive ? 'text-white/80' : 'text-ink-500'}`}>{r.desc}</p>
                   </button>
                 );
               })}
@@ -56,7 +56,7 @@ export function Register() {
           </div>
 
           <div className="lg:col-span-7">
-            <div className="glass rounded-[2rem] p-6 sm:p-8">
+            <div className="glass rounded-[1.75rem] sm:rounded-[2rem] p-5 sm:p-8">
               {submitted ? (
                 <div className="text-center py-12">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">

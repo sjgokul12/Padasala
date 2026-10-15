@@ -62,7 +62,7 @@ export function Hero() {
   return (
     <section
       id="home"
-      className="relative overflow-hidden pt-24 pb-6 sm:pt-28 sm:pb-8 lg:pt-28 lg:pb-6 min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#cae8ff] via-[#e2f2ff] to-[#f4faff] select-none"
+      className="relative overflow-hidden pt-24 pb-10 sm:pt-28 sm:pb-8 lg:pt-28 lg:pb-6 md:min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#cae8ff] via-[#e2f2ff] to-[#f4faff] select-none"
     >
       {/* ========================================================================= */}
       {/* 3D ATMOSPHERIC VISUAL ENVIRONMENT & FLOATING ANIMATIONS */}
@@ -83,7 +83,7 @@ export function Hero() {
       />
 
       {/* Floating Paper Airplane with Dotted Loop Trail (Top Left) */}
-      <div className="pointer-events-none absolute top-12 sm:top-16 left-2 sm:left-4 lg:left-6 z-20 animate-plane-bob">
+      <div className="pointer-events-none absolute top-20 sm:top-16 left-0 sm:left-4 lg:left-6 z-0 sm:z-20 opacity-70 sm:opacity-100 animate-plane-bob">
         <svg
           className="w-24 sm:w-32 lg:w-36 h-20 sm:h-24 text-sky-400/90 drop-shadow-md"
           viewBox="0 0 160 100"
@@ -135,7 +135,7 @@ export function Hero() {
       </div>
 
       {/* Floating 3D Graduation Cap (Top Right) */}
-      <div className="pointer-events-none absolute top-12 sm:top-16 right-4 sm:right-10 lg:right-14 z-20 w-24 sm:w-32 md:w-36 lg:w-40 animate-float-slow opacity-95">
+      <div className="pointer-events-none absolute top-24 sm:top-16 right-2 sm:right-10 lg:right-14 z-0 sm:z-20 w-16 sm:w-32 md:w-36 lg:w-40 animate-float-slow opacity-80 sm:opacity-95">
         <div className="relative overflow-visible">
           <img
             src={gradCapImg}
@@ -183,7 +183,7 @@ export function Hero() {
           <div className="lg:col-span-6 lg:pl-48 xl:pl-56 2xl:pl-64 space-y-3.5 sm:space-y-4 text-center lg:text-left animate-fadeUp">
             
             {/* Mobile-only Student Display */}
-            <div className="lg:hidden mx-auto w-44 sm:w-52 relative">
+            <div className="lg:hidden mx-auto w-32 sm:w-52 relative">
               <div className="pointer-events-none absolute top-3 left-6 w-12 h-12 bg-yellow-300/40 blur-lg rounded-full animate-glow-pulse" />
               <img
                 src={studentBooksImg}
@@ -194,14 +194,14 @@ export function Hero() {
 
             {/* Eyebrow Pill */}
             <div className="inline-flex justify-center lg:justify-start">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100/90 border border-sky-300/80 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#034078] shadow-sm backdrop-blur-md">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100/90 border border-sky-300/80 px-3 sm:px-3.5 py-1 text-[10px] sm:text-[11px] font-black uppercase tracking-wide sm:tracking-wider text-[#034078] shadow-sm backdrop-blur-md">
                 <Sparkles className="h-3.5 w-3.5 text-[#0284c7] fill-[#0284c7]" />
                 INDIA'S MODERN EDUCATION PLATFORM
               </span>
             </div>
 
             {/* Main Heading */}
-            <h1 className="font-display text-3xl sm:text-4xl lg:text-[36px] xl:text-[42px] font-black leading-[1.14] tracking-tight text-[#0b1f33] text-balance">
+            <h1 className="font-display text-[28px] sm:text-4xl lg:text-[36px] xl:text-[42px] font-black leading-[1.14] tracking-tight text-[#0b1f33] text-balance">
               Find the right{' '}
               <span className="text-[#0088ff]">school</span>,{' '}
               <span className="text-[#0088ff]">course</span>,
@@ -218,26 +218,28 @@ export function Hero() {
             </h1>
 
             {/* Subheading / Description */}
-            <p className="max-w-md mx-auto lg:mx-0 text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+            <p className="max-w-md mx-auto lg:mx-0 text-sm text-slate-700 leading-relaxed font-medium">
               Padasala connects students, parents, schools, teachers and tuition centres. Discover verified schools,
               prepare for NEET & JEE, apply for teaching jobs, join skill classes and never miss a school event.
             </p>
 
             {/* Action Buttons */}
-            <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+            <div className="pt-1 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
               {/* Primary CTA */}
               <a
                 href="#register"
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-6 sm:px-7 py-3 text-xs sm:text-sm font-bold text-white shadow-[0_8px_25px_rgba(0,114,255,0.38),inset_0_1.5px_2px_rgba(255,255,255,0.6)] transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,114,255,0.5)] hover:-translate-y-0.5 active:translate-y-0"
+                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-3 sm:px-7 py-3 text-xs sm:text-sm font-bold text-white shadow-[0_8px_25px_rgba(0,114,255,0.38),inset_0_1.5px_2px_rgba(255,255,255,0.6)] transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,114,255,0.5)] hover:-translate-y-0.5 active:translate-y-0"
               >
-                <span>🚀 Get started free</span>
+                <span>
+                  🚀 Get started<span className="hidden min-[400px]:inline"> free</span>
+                </span>
                 <ArrowRight className="h-4 w-4 stroke-[2.5]" />
               </a>
 
               {/* Secondary CTA */}
               <a
                 href="#schools"
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/85 hover:bg-white backdrop-blur-md border border-sky-300/80 hover:border-sky-400 px-5 sm:px-6 py-3 text-xs sm:text-sm font-bold text-[#0284c7] shadow-[0_4px_16px_rgba(2,132,199,0.08)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 hover:bg-white backdrop-blur-md border border-sky-300/80 hover:border-sky-400 px-3 sm:px-6 py-3 text-xs sm:text-sm font-bold text-[#0284c7] shadow-[0_4px_16px_rgba(2,132,199,0.08)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Compass className="h-4 w-4 text-[#0284c7] stroke-[2.4]" />
                 <span>Explore schools</span>
@@ -250,7 +252,7 @@ export function Hero() {
           {/* RIGHT 6 COLS: FROSTED GLASS SEARCH PANEL & QUICK ACTION CARDS */}
           {/* ===================================================================== */}
           <div className="lg:col-span-6 animate-fadeUp" style={{ animationDelay: '120ms' }}>
-            <div className="relative rounded-[30px] sm:rounded-[36px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/95 p-4 sm:p-6 shadow-[0_20px_50px_rgba(2,132,199,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-1px_2px_rgba(255,255,255,0.35)]">
+            <div className="relative rounded-[26px] sm:rounded-[36px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/95 p-3.5 sm:p-6 shadow-[0_20px_50px_rgba(2,132,199,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-1px_2px_rgba(255,255,255,0.35)]">
               
               {/* Tab Switcher - 4 Glass Pill Buttons */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
@@ -362,7 +364,7 @@ export function Hero() {
               </form>
 
               {/* City Filter Chips */}
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <div className="mt-3 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 flex flex-nowrap sm:flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar">
                 {popularCities.map((city) => {
                   const isSelected = selectedCity === city;
                   return (
@@ -370,7 +372,7 @@ export function Hero() {
                       key={city}
                       type="button"
                       onClick={() => handleCityClick(city)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+                      className={`shrink-0 rounded-full px-3 py-1.5 sm:py-1 text-xs font-semibold transition-all ${
                         isSelected
                           ? 'bg-[#0284c7] text-white shadow-sm'
                           : 'bg-white/65 hover:bg-white/90 text-slate-700 backdrop-blur-md border border-white/85 shadow-[0_2px_6px_rgba(0,0,0,0.02)]'
@@ -383,21 +385,21 @@ export function Hero() {
                 <button
                   type="button"
                   onClick={() => setShowCityDropdown(!showCityDropdown)}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-white/65 hover:bg-white/90 text-[#0284c7] backdrop-blur-md border border-white/85 px-3 py-1 text-xs font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition"
+                  className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-white/65 hover:bg-white/90 text-[#0284c7] backdrop-blur-md border border-white/85 px-3 py-1.5 sm:py-1 text-xs font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition"
                 >
                   More <ChevronDown className="h-3 w-3 text-[#0284c7]" />
                 </button>
               </div>
 
               {/* Bottom Quick Feature Cards - Ultra Glassmorphic */}
-              <div className="mt-4 sm:mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="mt-3.5 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
                 {/* For Schools Card */}
                 <a
                   href="#register"
                   className="group rounded-[22px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/90 p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(2,132,199,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:bg-white/80 hover:shadow-[0_12px_28px_rgba(2,132,199,0.14)] hover:border-sky-200 transition-all duration-300 flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#dbeafe] via-[#bae6fd] to-[#7dd3fc] text-[#0284c7] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                  <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#dbeafe] via-[#bae6fd] to-[#7dd3fc] text-[#0284c7] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
                       <Building2 className="h-5 w-5 stroke-[2.2]" />
                     </div>
                     <div>
@@ -409,7 +411,7 @@ export function Hero() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-blue-100 text-[#0284c7] group-hover:bg-[#0284c7] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
+                  <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-blue-100 text-[#0284c7] group-hover:bg-[#0284c7] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
                     <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
                   </div>
                 </a>
@@ -419,8 +421,8 @@ export function Hero() {
                   href="#jobs"
                   className="group rounded-[22px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/90 p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(124,58,237,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:bg-white/80 hover:shadow-[0_12px_28px_rgba(124,58,237,0.14)] hover:border-purple-200 transition-all duration-300 flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#f3e8ff] via-[#e9d5ff] to-[#d8b4fe] text-[#7c3aed] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                  <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#f3e8ff] via-[#e9d5ff] to-[#d8b4fe] text-[#7c3aed] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
                       <GraduationCap className="h-5 w-5 stroke-[2.2]" />
                     </div>
                     <div>
@@ -432,7 +434,7 @@ export function Hero() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-purple-100 text-[#7c3aed] group-hover:bg-[#7c3aed] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
+                  <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-purple-100 text-[#7c3aed] group-hover:bg-[#7c3aed] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
                     <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
                   </div>
                 </a>
@@ -447,7 +449,7 @@ export function Hero() {
       {/* ========================================================================= */}
       {/* BOTTOM CENTER 4 QUICK NAV BADGES (EXACT FROM REFERENCE BOTTOM BAR) */}
       {/* ========================================================================= */}
-      <div className="relative z-10 w-full pt-2 pb-1 flex items-center justify-center">
+      <div className="relative z-10 w-full pt-2 pb-1 hidden md:flex items-center justify-center">
         <div className="flex items-center gap-6 sm:gap-10">
           {bottomNavBadges.map((badge) => {
             const Icon = badge.icon;

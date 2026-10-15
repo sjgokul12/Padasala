@@ -285,7 +285,7 @@ export function About() {
   return (
     <section
       id="about"
-      className="relative overflow-hidden bg-gradient-to-b from-[#eaf4fe] via-[#f4f9ff] to-[#e0f0fe] py-16 sm:py-20 lg:py-24 select-none text-slate-800"
+      className="relative overflow-hidden bg-gradient-to-b from-[#eaf4fe] via-[#f4f9ff] to-[#e0f0fe] py-14 sm:py-20 lg:py-24 select-none text-slate-800"
     >
       {/* Decorative Atmosphere Glows */}
       <div
@@ -302,10 +302,10 @@ export function About() {
       <div className="pointer-events-none absolute -bottom-4 -right-4 w-60 sm:w-80 h-28 sm:h-36 bg-gradient-to-tl from-purple-400/20 via-indigo-300/10 to-transparent rounded-tl-full blur-2xl" />
 
       <div className="container-page relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 xl:gap-14 items-center">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 lg:gap-12 xl:gap-14 items-center">
+
           {/* Left Column: Heading, Paragraphs, Trust Badges, 3D Hero Art & Promise Card */}
-          <div className="lg:col-span-5 space-y-6 sm:space-y-7 animate-fadeUp">
+          <div className="lg:col-span-5 space-y-5 sm:space-y-7 animate-fadeUp">
             {/* Eyebrow Badge */}
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-[#edf4ff] border border-blue-200/80 shadow-[0_2px_8px_rgba(59,130,246,0.12)] px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider text-[#0284c7]">
@@ -314,7 +314,7 @@ export function About() {
             </div>
 
             {/* Main Title */}
-            <h2 className="font-display text-3xl sm:text-4xl lg:text-[44px] xl:text-[48px] font-black leading-[1.12] tracking-tight text-slate-900 text-balance">
+            <h2 className="font-display text-[26px] sm:text-4xl lg:text-[44px] xl:text-[48px] font-black leading-[1.12] tracking-tight text-slate-900 text-balance">
               An education platform built for the{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 underline decoration-sky-400 decoration-wavy decoration-2">
                 next decade
@@ -332,7 +332,7 @@ export function About() {
             </div>
 
             {/* Trust Badges Strip (3 Items in Frosted Glass Box) */}
-            <div className="flex items-center justify-between rounded-2xl bg-white/60 backdrop-blur-md border border-white p-2.5 sm:p-3 shadow-sm text-xs font-bold text-slate-800">
+            <div className="flex items-center justify-between gap-1 rounded-2xl bg-white/60 backdrop-blur-md border border-white p-2.5 sm:p-3 shadow-sm text-[11px] sm:text-xs font-bold text-slate-800">
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-[#0284c7] shrink-0 stroke-[2.5]" />
                 <span>Trusted Platform</span>
@@ -350,8 +350,8 @@ export function About() {
             </div>
 
             {/* 3D Illustration Graphic (Cap on books with diploma scroll on pedestal) */}
-            <div className="relative py-2 flex justify-center">
-              <div className="w-52 sm:w-64 md:w-72 relative overflow-hidden rounded-full [mask-image:radial-gradient(circle_at_center,black_55%,transparent_75%)] transition-transform duration-700 hover:scale-105">
+            <div className="relative py-0 sm:py-2 flex justify-center">
+              <div className="w-36 sm:w-64 md:w-72 relative overflow-hidden rounded-full [mask-image:radial-gradient(circle_at_center,black_55%,transparent_75%)] transition-transform duration-700 hover:scale-105">
                 <img
                   src={aboutHeroImg}
                   alt="3D Graduation Cap on Books with Diploma"
@@ -384,7 +384,7 @@ export function About() {
           </div>
 
           {/* Right Column: 6 Frosted Glass Feature Cards Grid (2 cols x 3 rows) */}
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          <div className="lg:col-span-7 rail [--rail-gutter:16px] md:grid md:grid-cols-2 gap-4 sm:gap-5">
             {points.map((p, idx) => {
               const Icon = p.icon;
               return (
