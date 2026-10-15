@@ -1,17 +1,15 @@
 import { useState } from 'react';
-import { User, Building2, Briefcase, BookOpen, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { roles, roleOrder, register, useSession, type Role } from '@/lib/auth';
+import { navigate } from '@/lib/router';
+import { districts } from '@/data/districts';
 
-const roles = [
-  { id: 'student', label: 'Student / Parent', icon: User, desc: 'Search schools, join courses and track events.' },
-  { id: 'school', label: 'School', icon: Building2, desc: 'Post vacancies, events and manage admissions.' },
-  { id: 'teacher', label: 'Teacher', icon: Briefcase, desc: 'Apply to schools with one professional profile.' },
-  { id: 'tutor', label: 'Tuition / Coach', icon: BookOpen, desc: 'List batches and reach students near you.' },
-] as const;
+const signupRoles = roleOrder.filter((r) => r !== 'admin');
 
 export function Register() {
-  const [role, setRole] = useState<typeof roles[number]['id']>('student');
-  const [submitted, setSubmitted] = useState(false);
-  const active = roles.find((r) => r.id === role)!;
+  const [role, setRole] = useState<Role>('student');
+  const session = useSession();
+  const active = roles[role];
 
   return (
     <section id="register" className="section bg-gradient-to-b from-white via-brand-50/30 to-brand-50/50">
@@ -23,17 +21,17 @@ export function Register() {
               One account for everything education
             </h2>
             <p className="mt-3 sm:mt-4 text-[15px] sm:text-base text-ink-500 leading-relaxed">
-              Pick your role and create a free account. Students discover schools and courses, schools manage admissions and posts, teachers apply for jobs, and tuition centres reach more learners.
+              Pick your role and create a free account in a minute.
             </p>
 
-            <div className="mt-5 sm:mt-6 grid grid-cols-2 gap-2.5 sm:gap-3">
-              {roles.map((r) => {
-                const Icon = r.icon;
-                const isActive = r.id === role;
+            <div className="reveal-stagger mt-5 sm:mt-6 grid grid-cols-2 gap-2.5 sm:gap-3">
+              {signupRoles.map((r) => {
+                const { label, desc, icon: Icon } = roles[r];
+                const isActive = r === role;
                 return (
                   <button
-                    key={r.id}
-                    onClick={() => { setRole(r.id); setSubmitted(false); }}
+                    key={r}
+                    onClick={() => setRole(r)}
                     className={`text-left rounded-2xl p-3 sm:p-4 ring-1 transition-all ${
                       isActive
                         ? 'bg-brand-600 text-white ring-brand-600 shadow-glow'
@@ -42,9 +40,9 @@ export function Register() {
                   >
                     <div className="flex items-center gap-2 sm:gap-2.5">
                       <Icon className="h-5 w-5 shrink-0" />
-                      <span className="font-display font-bold text-[13px] sm:text-sm leading-tight">{r.label}</span>
+                      <span className="font-display font-bold text-[13px] sm:text-sm leading-tight">{label}</span>
                     </div>
-                    <p className={`mt-1.5 text-[11px] sm:text-xs leading-snug ${isActive ? 'text-white/80' : 'text-ink-500'}`}>{r.desc}</p>
+                    <p className={`mt-1.5 text-[11px] sm:text-xs leading-snug ${isActive ? 'text-white/80' : 'text-ink-500'}`}>{desc}</p>
                   </button>
                 );
               })}
@@ -55,74 +53,60 @@ export function Register() {
             </div>
           </div>
 
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 reveal">
             <div className="glass rounded-[1.75rem] sm:rounded-[2rem] p-5 sm:p-8">
-              {submitted ? (
+              {session ? (
                 <div className="text-center py-12">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
                     <CheckCircle2 className="h-8 w-8" />
                   </div>
-                  <h3 className="mt-5 font-display text-2xl font-bold text-ink-900">You're on the list!</h3>
-                  <p className="mt-2 text-ink-500 max-w-sm mx-auto">
-                    Your {active.label.toLowerCase()} account request has been received. Our team will verify and activate your profile shortly.
-                  </p>
-                  <button onClick={() => setSubmitted(false)} className="btn-outline mt-6">
-                    Submit another
-                  </button>
+                  <h3 className="mt-5 font-display text-2xl font-bold text-ink-900">You're logged in, {session.name}!</h3>
+                  <p className="mt-2 text-ink-500 max-w-sm mx-auto">Continue to your {roles[session.role].label.toLowerCase()} dashboard.</p>
+                  <a href={`#${roles[session.role].home}`} className="btn-primary mt-6">
+                    Open dashboard <ArrowRight className="h-4 w-4" />
+                  </a>
                 </div>
               ) : (
                 <form
-                  onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const f = new FormData(e.currentTarget);
+                    register({
+                      role,
+                      name: String(f.get('name')),
+                      phone: String(f.get('phone')),
+                      email: String(f.get('email') ?? ''),
+                      district: String(f.get('district') ?? ''),
+                    });
+                    navigate(roles[role].home);
+                  }}
                   className="grid sm:grid-cols-2 gap-4"
                 >
                   <h3 className="font-display text-xl font-bold text-ink-900 sm:col-span-2">
                     Create your {active.label} account
                   </h3>
-                  <div>
-                    <label className="label" htmlFor="fname">Full name</label>
-                    <input id="fname" required className="input" placeholder="Your name" />
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="fname">{role === 'student' || role === 'teacher' ? 'Full name' : 'Name of school / centre / company'}</label>
+                    <input id="fname" name="name" required className="input" placeholder="Name" />
                   </div>
                   <div>
-                    <label className="label" htmlFor="phone">Phone</label>
-                    <input id="phone" required className="input" placeholder="10-digit mobile" />
+                    <label className="label" htmlFor="phone">Mobile number</label>
+                    <input id="phone" name="phone" required inputMode="numeric" pattern="[0-9 +]{10,14}" className="input" placeholder="10-digit mobile" />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="rdistrict">District</label>
+                    <select id="rdistrict" name="district" required className="input">
+                      <option value="">Select…</option>
+                      {districts.map((d) => <option key={d}>{d}</option>)}
+                    </select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="label" htmlFor="email">Email</label>
-                    <input id="email" type="email" required className="input" placeholder="you@example.com" />
+                    <label className="label" htmlFor="email">Email (optional)</label>
+                    <input id="email" name="email" type="email" className="input" placeholder="you@example.com" />
                   </div>
-                  {role === 'school' && (
-                    <div className="sm:col-span-2">
-                      <label className="label" htmlFor="schoolname">School name</label>
-                      <input id="schoolname" required className="input" placeholder="Official school name" />
-                    </div>
-                  )}
-                  {role === 'teacher' && (
-                    <>
-                      <div>
-                        <label className="label" htmlFor="subject">Primary subject</label>
-                        <input id="subject" className="input" placeholder="e.g. Physics" />
-                      </div>
-                      <div>
-                        <label className="label" htmlFor="exp">Experience</label>
-                        <input id="exp" className="input" placeholder="e.g. 5 years" />
-                      </div>
-                    </>
-                  )}
-                  {role === 'tutor' && (
-                    <div className="sm:col-span-2">
-                      <label className="label" htmlFor="skills">Skills / subjects</label>
-                      <input id="skills" className="input" placeholder="Chess, Silambam, Maths..." />
-                    </div>
-                  )}
-                  {role === 'student' && (
-                    <div>
-                      <label className="label" htmlFor="grade">Class / grade</label>
-                      <input id="grade" className="input" placeholder="e.g. Class 11" />
-                    </div>
-                  )}
                   <div className="sm:col-span-2">
-                    <label className="label" htmlFor="city">City</label>
-                    <input id="city" required className="input" placeholder="e.g. Coimbatore" />
+                    <label className="label" htmlFor="rpass">Create password</label>
+                    <input id="rpass" type="password" required minLength={6} className="input" />
                   </div>
 
                   <button type="submit" className="btn-primary sm:col-span-2 mt-2">

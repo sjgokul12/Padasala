@@ -119,7 +119,7 @@ export function Events() {
       </div>
 
       {/* Header Container */}
-      <div className="container-page relative z-10 text-center max-w-3xl mx-auto px-4">
+      <div className="reveal container-page relative z-10 text-center max-w-3xl mx-auto px-4">
         {/* Eyebrow Badge */}
         <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#edf4ff] border border-blue-200/80 shadow-[0_2px_8px_rgba(59,130,246,0.12)] text-[#2563eb] font-extrabold text-[11px] sm:text-xs tracking-wider uppercase mb-3 sm:mb-4">
           <CalendarDays className="h-3.5 w-3.5 fill-[#2563eb] text-[#2563eb]" />
@@ -137,7 +137,7 @@ export function Events() {
 
         {/* Subtitle */}
         <p className="mt-3 text-sm md:text-base font-medium sm:font-semibold text-slate-500 sm:tracking-wide max-w-2xl mx-auto">
-          Sports, cultural, academic and workshop events posted by schools — register online and get reminders before the event.
+          Competitions, fests and workshops — register and get reminders.
         </p>
       </div>
 
@@ -146,7 +146,7 @@ export function Events() {
         <div
           ref={scrollRef}
           onScroll={syncActivePage}
-          className="rail [--rail-gutter:16px] md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
+          className="reveal-stagger rail [--rail-gutter:16px] md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
         >
           {events.map((e, idx) => {
             const badge = categoryBadges[e.category] ?? {
@@ -227,7 +227,7 @@ export function Events() {
                     {/* Left CTA Button */}
                     {e.registrationOpen ? (
                       <a
-                        href="#register"
+                        href="#/events"
                         className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-[0_6px_18px_rgba(0,114,255,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.6)] hover:scale-105 active:scale-95 transition-all"
                       >
                         <span>Register Now</span>

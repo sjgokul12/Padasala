@@ -1,4 +1,4 @@
-import { Briefcase, MapPin, Clock, IndianRupee, ArrowRight } from 'lucide-react';
+import { Briefcase, MapPin, Clock, IndianRupee, ArrowRight, UserRound, Plus } from 'lucide-react';
 import { jobs } from '@/data/content';
 import { SectionHeading } from './SectionHeading';
 
@@ -11,32 +11,44 @@ export function Jobs() {
             <SectionHeading
               eyebrow="Teacher job portal"
               title="Teachers, find your next school"
-              subtitle="Schools post verified vacancies. Teachers apply with one professional profile and track every application in real time."
+              subtitle="Verified vacancies, one profile, every application tracked."
             />
-            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 sm:gap-3">
-              <a href="#register" className="btn-primary px-3 sm:px-5 text-sm sm:text-base">
-                <span className="sm:hidden">Teacher profile</span>
-                <span className="hidden sm:inline">Create teacher profile</span>
-                <ArrowRight className="h-4 w-4" />
+            <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3">
+              <a
+                href="#/teachers"
+                className="group inline-flex items-center justify-between gap-3 rounded-full bg-gradient-to-r from-[#0062f5] via-[#2563eb] to-[#7c3aed] py-1.5 pl-5 pr-1.5 font-bold text-white shadow-[0_14px_30px_-10px_rgba(37,99,235,0.7)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-10px_rgba(124,58,237,0.7)]"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <UserRound className="h-[18px] w-[18px]" /> Create teacher profile
+                </span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2563eb] transition-transform group-hover:translate-x-0.5 group-hover:rotate-[-20deg]">
+                  <ArrowRight className="h-[18px] w-[18px]" />
+                </span>
               </a>
-              <a href="#register" className="btn-ghost px-3 sm:px-5 text-sm sm:text-base">
-                Post a vacancy
+              <a
+                href="#/schools/dashboard"
+                className="group inline-flex items-center justify-between gap-3 rounded-full bg-white/80 py-1.5 pl-1.5 pr-5 font-bold text-[#0b1f33] ring-1 ring-sky-200 backdrop-blur transition-all hover:-translate-y-0.5 hover:ring-sky-400 hover:shadow-[0_12px_26px_-12px_rgba(2,132,199,0.5)]"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-100 to-sky-50 text-[#0284c7] transition-transform group-hover:rotate-90">
+                  <Plus className="h-5 w-5" strokeWidth={2.6} />
+                </span>
+                <span className="flex-1 text-left sm:flex-none">Post a vacancy</span>
+                <ArrowRight className="h-4 w-4 text-[#0284c7] opacity-60 transition group-hover:opacity-100" />
               </a>
             </div>
             <div className="mt-5 sm:mt-8 glass rounded-2xl p-4 sm:p-5">
               <div className="text-xs font-semibold uppercase tracking-wide text-brand-600">Application tracker</div>
               <p className="mt-1.5 text-sm text-ink-700">
-                See applied, shortlisted, interview and offer stages — all in one dashboard.
+                Applied, shortlisted, interview, offer — all in one place.
               </p>
             </div>
           </div>
 
-          <div className="lg:col-span-8 rail md:block md:space-y-4">
-            {jobs.map((j, i) => (
+          <div className="reveal-stagger lg:col-span-8 rail md:block md:space-y-4">
+            {jobs.map((j) => (
               <article
                 key={j.id}
-                className="card card-hover p-4 sm:p-6 animate-fadeUp"
-                style={{ animationDelay: `${i * 70}ms` }}
+                className="card card-hover p-4 sm:p-6"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3 sm:gap-4">
@@ -62,7 +74,7 @@ export function Jobs() {
                       <span className="chip bg-brand-50 text-brand-700">{j.subject}</span>
                       <span className="chip bg-slate-50 text-ink-700 ring-1 ring-slate-100">{j.experience}</span>
                     </div>
-                    <a href="#register" className="btn-primary text-sm w-full sm:w-auto">Apply now</a>
+                    <a href="#/teachers" className="btn-primary text-sm w-full sm:w-auto">Apply now</a>
                   </div>
                 </div>
               </article>

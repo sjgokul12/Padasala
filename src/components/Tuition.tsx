@@ -16,15 +16,14 @@ export function Tuition() {
           center
           eyebrow="Tuition & skill classes"
           title="Tuition centres, home tutors & skill coaches"
-          subtitle="Find online, offline and home tuition for academics plus skill classes in chess, silambam, yoga and spoken English."
+          subtitle="Online, offline and home tuition — plus chess, silambam and yoga."
         />
 
-        <div className="rail mt-8 sm:mt-12 md:grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {tuitions.map((t, i) => (
+        <div className="reveal-stagger rail mt-8 sm:mt-12 md:grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {tuitions.map((t) => (
             <article
               key={t.id}
-              className="card card-hover p-5 sm:p-6 flex flex-col animate-fadeUp"
-              style={{ animationDelay: `${i * 70}ms` }}
+              className="card card-hover p-5 sm:p-6 flex flex-col"
             >
               <div className="flex items-center justify-between">
                 <span className={`chip ${modeStyle[t.mode]}`}>{t.mode}</span>
@@ -49,7 +48,7 @@ export function Tuition() {
                 ))}
               </div>
 
-              <a href="#register" className="btn-outline text-sm mt-auto w-full">Enquire now</a>
+              <a href="#/coaching/academic" className="btn-outline text-sm mt-auto w-full">Enquire now</a>
             </article>
           ))}
         </div>

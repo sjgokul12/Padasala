@@ -12,11 +12,11 @@ export function Contact() {
           center
           eyebrow="Help & support"
           title="We're here to help"
-          subtitle="Questions about admissions, listings, jobs or events? Reach out and our team will respond within one business day."
+          subtitle="Questions? Our team replies within one business day."
         />
 
         <div className="mt-8 sm:mt-12 grid lg:grid-cols-12 gap-6 sm:gap-8">
-          <div className="lg:col-span-5 space-y-3 sm:space-y-4">
+          <div className="reveal-stagger lg:col-span-5 space-y-3 sm:space-y-4">
             {[
               { icon: Phone, label: 'Call us', value: '+91 98765 43210', sub: 'Mon–Sat, 9am–7pm', href: 'tel:+919876543210' },
               { icon: Mail, label: 'Email', value: 'support@padasala.in', sub: 'We reply within 24 hours', href: 'mailto:support@padasala.in' },
@@ -51,7 +51,7 @@ export function Contact() {
             </div>
           </div>
 
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 reveal">
             <div className="glass rounded-[1.75rem] sm:rounded-[2rem] p-5 sm:p-8">
               {sent ? (
                 <div className="text-center py-14">

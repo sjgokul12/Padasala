@@ -375,31 +375,31 @@ export const features = [
   {
     icon: 'School',
     title: 'Discover Verified Schools',
-    desc: 'Search by location, board, facilities and grade. Compare profiles and apply for admission in minutes.',
+    desc: 'Compare and apply in minutes.',
   },
   {
     icon: 'GraduationCap',
     title: 'NEET & JEE Courses',
-    desc: 'Structured preparation with mock tests, daily practice, and performance analytics built in.',
+    desc: 'Timed mock tests with instant solutions.',
   },
   {
     icon: 'Briefcase',
     title: 'Teacher Job Portal',
-    desc: 'Schools post vacancies, teachers apply with one profile and track every application in real time.',
+    desc: 'One profile to apply and track every job.',
   },
   {
     icon: 'BookOpen',
     title: 'Tuition & Skill Classes',
-    desc: 'Find online, offline and home tuition plus chess, silambam, yoga and spoken English classes.',
+    desc: 'Tutors and skill coaches near you.',
   },
   {
     icon: 'CalendarDays',
     title: 'School Events & Competitions',
-    desc: 'Sports, cultural, academic and workshop events posted by schools — register and get reminders.',
+    desc: 'Competitions and fests by date and district.',
   },
   {
     icon: 'ClipboardCheck',
     title: 'Admissions Made Simple',
-    desc: 'Enquiry forms, application tracking and direct school contact — all from one dashboard.',
+    desc: 'Admissions, offers and enquiries.',
   },
 ];

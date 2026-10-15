@@ -4,6 +4,10 @@ import { Sparkles } from 'lucide-react';
 import bookAirplaneImg from '@/assets/book_airplane_3d.jpg';
 import gradCapImg from '@/assets/grad_cap_3d.jpg';
 
+// Activity photos (Pexels licence), bundled so they also work offline in the Android app.
+const activityImages = import.meta.glob('/src/assets/activities/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
+const photoFor = (id: string) => activityImages[`/src/assets/activities/${id}.webp`];
+
 interface BoardSkillItem {
   id: string;
   title: string;
@@ -562,7 +566,7 @@ export function TrustStrip() {
       </div>
 
       {/* Header Container */}
-      <div className="container-page relative z-10 text-center max-w-3xl mx-auto px-4">
+      <div className="reveal container-page relative z-10 text-center max-w-3xl mx-auto px-4">
         {/* Top Badge: ⭐ OUR ACTIVITIES */}
         <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#edf4ff] border border-blue-200/80 shadow-[0_2px_8px_rgba(59,130,246,0.12)] text-[#2563eb] font-extrabold text-[11px] sm:text-xs tracking-wider uppercase mb-3 sm:mb-4">
           <Sparkles className="h-3.5 w-3.5 fill-[#2563eb] text-[#2563eb]" />
@@ -594,51 +598,53 @@ export function TrustStrip() {
         </div>
 
         {/* Subtitle */}
-        <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm md:text-base font-semibold text-slate-500 tracking-wide">
+        <p className="mt-2 sm:mt-3 text-sm md:text-base font-semibold text-slate-500 tracking-wide">
           Learn <span className="text-slate-300">•</span> Practice <span className="text-slate-300">•</span> Grow <span className="text-slate-300">•</span> Build a Better You
         </p>
       </div>
 
       {/* Marquee Slider Area - Ultra Glassmorphic Cards */}
       <div
-        className="relative mt-8 sm:mt-11"
+        className="reveal relative mt-8 sm:mt-11"
         style={{
           maskImage: 'linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)',
           WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)',
         }}
       >
-        <Marquee speed={40} gradient={false} pauseOnHover autoFill className="py-4 overflow-visible">
+        <Marquee speed={36} gradient={false} pauseOnHover pauseOnClick autoFill className="py-4 overflow-visible">
           {items.map((item) => (
             <div
               key={item.id}
-              className="group mx-2.5 sm:mx-3.5 relative flex-shrink-0 w-[125px] sm:w-[140px] md:w-[150px] rounded-[24px] sm:rounded-[28px] bg-white/45 backdrop-blur-2xl border-[1.5px] border-white/80 shadow-[0_12px_32px_rgba(2,132,199,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-1px_2px_rgba(255,255,255,0.3)] p-3.5 sm:p-4 md:p-5 flex flex-col items-center justify-between transition-all duration-300 hover:-translate-y-2 hover:bg-white/75 hover:shadow-[0_20px_45px_rgba(37,99,235,0.16)] hover:border-sky-200 cursor-pointer"
+              className="group mx-2 sm:mx-3 relative flex-shrink-0 w-[150px] sm:w-[184px] md:w-[200px] rounded-[24px] bg-white p-1.5 sm:p-2 shadow-[0_14px_34px_-14px_rgba(2,132,199,0.35)] ring-1 ring-slate-100 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_22px_45px_-14px_rgba(37,99,235,0.45)]"
             >
-              {/* Glossy App Squircle Icon */}
-              <div
-                className={`relative w-[68px] h-[68px] sm:w-[78px] sm:h-[78px] md:w-[82px] md:h-[82px] rounded-[20px] sm:rounded-[24px] bg-gradient-to-br ${item.gradient} p-2.5 sm:p-3 flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105`}
-                style={{
-                  boxShadow: `0 10px 24px -4px ${item.glowColor}, inset 0 2px 4px rgba(255,255,255,0.7), inset 0 -2px 4px rgba(0,0,0,0.15)`,
-                }}
-              >
-                {/* 3D Gloss Highlight Sheen */}
-                <div className="absolute inset-0 rounded-[20px] sm:rounded-[24px] bg-gradient-to-b from-white/45 via-transparent to-black/10 pointer-events-none" />
-
-                {/* 3D Vector Icon */}
-                <div className="relative z-10 w-full h-full flex items-center justify-center">
+              {/* Photo */}
+              <div className="relative h-[112px] sm:h-[132px] md:h-[144px] overflow-hidden rounded-[18px] bg-slate-100">
+                <img
+                  src={photoFor(item.id)}
+                  alt={item.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                {/* Glossy icon badge */}
+                <div
+                  className={`absolute bottom-2 left-2 h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br ${item.gradient} p-1.5 shadow-lg ring-2 ring-white/80`}
+                  style={{ boxShadow: `0 8px 18px -4px ${item.glowColor}` }}
+                >
                   <Glossy3DIcon type={item.iconType} />
                 </div>
               </div>
 
-              {/* Title */}
-              <h3 className="mt-3 text-xs sm:text-sm font-bold text-slate-800 text-center tracking-tight group-hover:text-blue-600 transition-colors">
-                {item.title}
-              </h3>
-
-              {/* Matching Indicator Bar */}
-              <div
-                className="mt-2 w-6 sm:w-7 h-[3px] sm:h-[3.5px] rounded-full transition-all duration-300 group-hover:w-10"
-                style={{ backgroundColor: item.accentColor }}
-              />
+              {/* Title + accent */}
+              <div className="flex items-center justify-between gap-2 px-1.5 pt-2.5 pb-1">
+                <h3 className="truncate text-[13px] sm:text-sm font-extrabold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors">
+                  {item.title}
+                </h3>
+                <span
+                  className="h-2 w-5 shrink-0 rounded-full transition-all duration-300 group-hover:w-8"
+                  style={{ backgroundColor: item.accentColor }}
+                />
+              </div>
             </div>
           ))}
         </Marquee>

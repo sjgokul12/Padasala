@@ -1,178 +1,233 @@
-import { useState, useEffect } from 'react';
-import { GraduationCap, Menu, X, ArrowRight, Download } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { Menu, ChevronDown, LogIn, LogOut, LayoutDashboard, UserPlus } from 'lucide-react';
+import { useRoute, isActive } from '@/lib/router';
+import { useSession, openLogin, logout, roles, roleOrder } from '@/lib/auth';
+import { SideDrawer } from './SideDrawer';
+import { DownloadBadge, Logo, mainNav, href } from './nav';
 
-// The Android APK is served from public/downloads. Hide the button inside the app itself.
-const APK_URL = '/downloads/padasala.apk';
-const showDownload = !Capacitor.isNativePlatform();
+/** Click-to-open dropdown that closes on outside click. */
+function Dropdown({ trigger, children, align = 'left', hover }: { trigger: (open: boolean) => ReactNode; children: ReactNode; align?: 'left' | 'right'; hover?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const { path } = useRoute();
 
-const nav = [
-  { label: 'Home', href: '#home', active: true },
-  { label: 'Schools', href: '#schools' },
-  { label: 'Courses', href: '#courses' },
-  { label: 'Teacher Jobs', href: '#jobs' },
-  { label: 'Tuition', href: '#tuition' },
-  { label: 'Events', href: '#events' },
-  { label: 'About', href: '#about' },
-];
+  useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={hover ? () => setOpen(true) : undefined}
+      onMouseLeave={hover ? () => setOpen(false) : undefined}
+    >
+      <div onClick={() => setOpen((v) => (hover ? true : !v))}>{trigger(open)}</div>
+      {open && (
+        <div className={`absolute top-full ${align === 'right' ? 'right-0' : 'left-0'} pt-2 z-50`} onClick={() => setOpen(false)}>
+          <div className="w-72 rounded-3xl bg-white p-2 shadow-[0_20px_50px_rgba(8,47,73,0.18)] ring-1 ring-slate-200/80 animate-fadeUp">
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountMenu() {
+  const session = useSession();
+
+  if (session) {
+    const info = roles[session.role];
+    return (
+      <Dropdown
+        align="right"
+        trigger={(open) => (
+          <button className="inline-flex items-center gap-2 rounded-full bg-white/80 py-1 pl-1 pr-3 ring-1 ring-slate-200 hover:ring-sky-300 transition">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#009bf8] to-[#0062f5] text-xs font-bold text-white">
+              {session.name.charAt(0).toUpperCase()}
+            </span>
+            <span className="max-w-[110px] truncate text-sm font-semibold text-slate-700">{session.name}</span>
+            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+      >
+        <div className="px-3 py-2">
+          <div className="text-sm font-bold text-[#0b1f33] truncate">{session.name}</div>
+          <div className="text-xs text-slate-500">Logged in as {info.label}</div>
+        </div>
+        <a href={href(info.home)} className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-sky-50 hover:text-[#0284c7]">
+          <LayoutDashboard className="h-4 w-4" /> My dashboard
+        </a>
+        <button onClick={logout} className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50">
+          <LogOut className="h-4 w-4" /> Logout
+        </button>
+      </Dropdown>
+    );
+  }
+
+  return (
+    <Dropdown
+      align="right"
+      trigger={(open) => (
+        <button className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200/80 bg-white/70 hover:bg-white transition shadow-sm">
+          <LogIn className="h-4 w-4" /> Login
+          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      )}
+    >
+      <div className="px-3 pt-1.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Login as</div>
+      {roleOrder.map((r) => {
+        const { label, desc, icon: Icon } = roles[r];
+        return (
+          <button key={r} onClick={() => openLogin(r)} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left hover:bg-sky-50 group">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[#0284c7] group-hover:bg-white">
+              <Icon className="h-4 w-4" />
+            </span>
+            <span>
+              <span className="block text-sm font-bold text-slate-800 group-hover:text-[#0284c7]">{label}</span>
+              <span className="block text-[11px] text-slate-500">{desc}</span>
+            </span>
+          </button>
+        );
+      })}
+      <button onClick={() => openLogin('student', 'register')} className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-sky-50 px-3 py-2.5 text-sm font-bold text-[#0284c7] hover:bg-sky-100">
+        <UserPlus className="h-4 w-4" /> New user? Register
+      </button>
+    </Dropdown>
+  );
+}
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const { path } = useRoute();
+  const session = useSession();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      progressRef.current?.style.setProperty('transform', `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => setDrawer(false), [path]);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:pt-6 transition-all duration-300">
-      <div className="mx-auto max-w-6xl">
-        <div
-          className={`flex items-center justify-between rounded-full px-4 sm:px-6 py-2.5 transition-all duration-300 ${
-            scrolled
-              ? 'bg-white/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] ring-1 ring-slate-200/70'
-              : 'bg-white/80 backdrop-blur-xl shadow-[0_8px_25px_rgba(14,165,233,0.08)] ring-1 ring-white/80'
-          }`}
-        >
-          {/* Logo */}
-          <a href="#home" className="flex items-center gap-2.5 group">
-            <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-tr from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] text-white shadow-md shadow-sky-500/25 transition-transform group-hover:scale-105">
-              <GraduationCap className="h-5 w-5" strokeWidth={2.4} />
-            </span>
-            <span className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[#0b1f33]">
-              Pada<span className="text-[#0284c7]">sala</span>
-            </span>
-          </a>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-            {nav.map((n) => (
-              <a
-                key={n.href}
-                href={n.href}
-                className={`relative whitespace-nowrap px-2 xl:px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                  n.active
-                    ? 'text-[#0284c7]'
-                    : 'text-slate-600 hover:text-[#0284c7]'
-                }`}
+    <>
+      {/* Scroll progress */}
+      <div
+        ref={progressRef}
+        aria-hidden
+        className="fixed inset-x-0 top-0 z-[60] h-[3px] origin-left bg-gradient-to-r from-[#009bf8] via-[#6366f1] to-[#a855f7] pt-[env(safe-area-inset-top)]"
+        style={{ transform: 'scaleX(0)' }}
+      />
+      <header className="fixed inset-x-0 top-0 z-50 px-3 sm:px-4 pt-3 sm:pt-5 transition-all duration-300">
+        <div className="mx-auto max-w-7xl">
+          <div
+            className={`flex items-center justify-between gap-2 rounded-full pl-3 pr-2.5 sm:px-4 py-2 transition-all duration-300 ${
+              scrolled
+                ? 'bg-white/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] ring-1 ring-slate-200/70'
+                : 'bg-white/80 backdrop-blur-xl shadow-[0_8px_25px_rgba(14,165,233,0.08)] ring-1 ring-white/80'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {/* Side menu (desktop) */}
+              <button
+                onClick={() => setDrawer(true)}
+                aria-label="Open side menu"
+                className="hidden lg:flex h-10 w-10 items-center justify-center rounded-full bg-sky-50 text-[#0284c7] ring-1 ring-sky-100 hover:bg-sky-100 transition"
               >
-                {n.label}
-                {n.active && (
-                  <span className="absolute -bottom-1 left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-full bg-[#0284c7]" />
-                )}
-              </a>
-            ))}
-          </nav>
+                <Menu className="h-5 w-5" />
+              </button>
+              <Logo />
+            </div>
 
-          {/* Action Buttons */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
-            {showDownload && (
-              <a
-                href={APK_URL}
-                download="Padasala.apk"
-                aria-label="Download Android app"
-                title="Download Android app"
-                className="inline-flex h-9 2xl:h-auto w-9 2xl:w-auto items-center justify-center gap-1.5 whitespace-nowrap rounded-full 2xl:px-4 2xl:py-2 text-sm font-semibold text-[#0284c7] ring-1 ring-sky-200 bg-sky-50/80 hover:bg-sky-100 transition shadow-sm"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden 2xl:inline">Download App</span>
-              </a>
-            )}
-            <a
-              href="#search"
-              aria-label="Search"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 hover:bg-white text-slate-600 hover:text-[#0284c7] ring-1 ring-slate-200/80 transition-all shadow-sm hover:scale-105"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </a>
-            <a
-              href="#login"
-              className="rounded-full px-4 xl:px-5 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200/80 bg-white/70 hover:bg-white transition shadow-sm"
-            >
-              Login
-            </a>
-            <a
-              href="#register"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-4 xl:px-5 py-2 text-sm font-semibold text-white shadow-md shadow-sky-500/25 transition-all hover:shadow-lg hover:shadow-sky-500/35 hover:-translate-y-0.5"
-            >
-              Register
-              <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
+            {/* Desktop navigation */}
+            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1">
+              {mainNav.map((n) => {
+                const active = isActive(path, n.to);
+                const cls = `relative inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 xl:px-3.5 py-2 text-sm font-semibold transition-colors ${
+                  active ? 'text-[#0284c7] bg-sky-50' : 'text-slate-600 hover:text-[#0284c7]'
+                }`;
+                if (!n.children) return <a key={n.to} href={href(n.to)} className={cls}>{n.label}</a>;
+                return (
+                  <Dropdown
+                    key={n.to}
+                    hover
+                    trigger={(open) => (
+                      <button className={cls} aria-haspopup="menu" aria-expanded={open}>
+                        {n.label}
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+                      </button>
+                    )}
+                  >
+                    {n.children.map((c) => (
+                      <a key={c.to} href={href(c.to)} className={`block rounded-2xl px-3.5 py-2.5 hover:bg-sky-50 group ${path === c.to ? 'bg-sky-50' : ''}`}>
+                        <span className="block text-sm font-bold text-slate-800 group-hover:text-[#0284c7]">{c.label}</span>
+                        <span className="block text-xs text-slate-500">{c.desc}</span>
+                      </a>
+                    ))}
+                  </Dropdown>
+                );
+              })}
+            </nav>
 
-          {/* Mobile Actions */}
-          <div className="lg:hidden flex items-center gap-2">
-            {showDownload && (
-              <a
-                href={APK_URL}
-                download="Padasala.apk"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-[#009bf8] to-[#0062f5] shadow-sm shadow-sky-500/25"
+            {/* Desktop actions */}
+            <div className="hidden lg:flex items-center gap-2">
+              <DownloadBadge />
+              <AccountMenu />
+              {!session && (
+                <button
+                  onClick={() => openLogin('student', 'register')}
+                  className="hidden xl:inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] px-5 py-2 text-sm font-semibold text-white shadow-md shadow-sky-500/25 transition-all hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  Register
+                </button>
+              )}
+            </div>
+
+            {/* Mobile actions */}
+            <div className="lg:hidden flex items-center gap-2">
+              <DownloadBadge compact />
+              {session ? (
+                <button
+                  onClick={() => setDrawer(true)}
+                  aria-label="My account"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#009bf8] to-[#0062f5] text-sm font-bold text-white shadow-sm"
+                >
+                  {session.name.charAt(0).toUpperCase()}
+                </button>
+              ) : (
+                <button
+                  onClick={() => openLogin()}
+                  aria-label="Login"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-50 text-[#0284c7] ring-1 ring-sky-100"
+                >
+                  <LogIn className="h-[18px] w-[18px]" />
+                </button>
+              )}
+              <button
+                onClick={() => setDrawer(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 ring-1 ring-slate-200 text-slate-700"
+                aria-label="Open menu"
               >
-                <Download className="h-4 w-4" />
-                <span className="hidden min-[380px]:inline">Get App</span>
-              </a>
-            )}
-            <button
-              onClick={() => setOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 ring-1 ring-slate-200 text-slate-700"
-              aria-label="Toggle menu"
-            >
-              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+                <Menu className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* Mobile Dropdown */}
-        {open && (
-          <div className="lg:hidden mt-2 overflow-hidden rounded-3xl bg-white/95 backdrop-blur-2xl p-4 shadow-xl ring-1 ring-slate-200/80">
-            <nav className="flex flex-col gap-1">
-              {nav.map((n) => (
-                <a
-                  key={n.href}
-                  href={n.href}
-                  onClick={() => setOpen(false)}
-                  className={`rounded-2xl px-4 py-2.5 text-base font-semibold ${
-                    n.active ? 'bg-sky-50 text-[#0284c7]' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  {n.label}
-                </a>
-              ))}
-              <div className="mt-3 grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-100">
-                <a
-                  href="#login"
-                  onClick={() => setOpen(false)}
-                  className="rounded-full border border-slate-200 py-2.5 text-center text-sm font-semibold text-slate-700"
-                >
-                  Login
-                </a>
-                <a
-                  href="#register"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] py-2.5 text-center text-sm font-semibold text-white shadow-sm"
-                >
-                  Register <ArrowRight className="h-4 w-4" />
-                </a>
-                {showDownload && (
-                  <a
-                    href={APK_URL}
-                    download="Padasala.apk"
-                    onClick={() => setOpen(false)}
-                    className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-50 ring-1 ring-sky-200 py-2.5 text-sm font-semibold text-[#0284c7]"
-                  >
-                    <Download className="h-4 w-4" /> Download Android App
-                  </a>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
-      </div>
-    </header>
+      </header>
+      <SideDrawer open={drawer} onClose={() => setDrawer(false)} />
+    </>
   );
 }

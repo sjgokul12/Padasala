@@ -14,7 +14,12 @@ import {
   Building2,
   GraduationCap,
   Users,
+  ClipboardList,
+  Megaphone,
+  Truck,
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { useSession } from '@/lib/auth';
 import studentBooksImg from '@/assets/student_books_transparent.png';
 import schoolBuildingImg from '@/assets/school_building_transparent.png';
 import gradCapImg from '@/assets/grad_cap_transparent.png';
@@ -36,7 +41,18 @@ const bottomNavBadges = [
   { label: 'Events', icon: CalendarDays, href: '#events' },
 ];
 
+// Shortcuts shown only in the Android app (the bottom bar already covers Schools, Coaching, Student, Events).
+const appShortcuts = [
+  { label: 'Mock Test', icon: ClipboardList, href: '#/students', tone: 'from-[#009bf8] to-[#0062f5]' },
+  { label: 'Teacher Jobs', icon: Briefcase, href: '#/teachers', tone: 'from-emerald-500 to-green-600' },
+  { label: 'Admissions', icon: Megaphone, href: '#/schools/updates', tone: 'from-amber-500 to-orange-600' },
+  { label: 'Vendors', icon: Truck, href: '#/vendors', tone: 'from-[#8b5cf6] to-[#6d28d9]' },
+];
+
+const isApp = Capacitor.isNativePlatform();
+
 export function Hero() {
+  const session = useSession();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]['id']>('schools');
   const [query, setQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
@@ -51,13 +67,236 @@ export function Hero() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const sectionId =
-      activeTab === 'jobs' ? 'jobs' : activeTab === 'courses' ? 'courses' : activeTab === 'events' ? 'events' : 'schools';
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    const page = { schools: '/schools', courses: '/coaching/courses', jobs: '/teachers', events: '/events' }[activeTab];
+    window.location.hash = page;
   };
+
+  // The frosted search card (Schools / Courses / Teacher Jobs / Events). Shared by the website and app layouts.
+  const searchPanel = (
+      <div className="relative rounded-[26px] sm:rounded-[36px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/95 p-3.5 sm:p-6 shadow-[0_20px_50px_rgba(2,132,199,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-1px_2px_rgba(255,255,255,0.35)]">
+        
+        {/* Tab Switcher - 4 Glass Pill Buttons */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = tab.id === activeTab;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex items-center justify-center gap-1.5 rounded-2xl sm:rounded-full py-2.5 px-2.5 text-xs font-bold transition-all duration-300 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] text-white shadow-[0_8px_20px_rgba(0,114,255,0.4),inset_0_1.5px_2px_rgba(255,255,255,0.7)] scale-[1.02]'
+                    : 'bg-white/60 hover:bg-white/85 text-slate-700 backdrop-blur-md border border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-md hover:scale-[1.01]'
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-white stroke-[2.4]' : 'text-[#0284c7] stroke-[2.2]'}`} />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search Form */}
+        <form onSubmit={handleSearchSubmit} className="mt-3.5 sm:mt-4 space-y-3">
+          {/* Search input pill */}
+          <div className="relative flex items-center rounded-full bg-white/80 backdrop-blur-md border border-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.02),inset_0_1px_2px_rgba(0,0,0,0.02)] px-4 sm:px-5 py-3 focus-within:ring-2 focus-within:ring-[#0ea5e9] focus-within:border-transparent transition-all">
+            <Search className="h-4 w-4 text-slate-800 shrink-0 mr-2.5 stroke-[2.2]" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={currentTab.placeholder}
+              className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+            />
+            <button
+              type="button"
+              aria-label="Search filter options"
+              className="ml-2 text-slate-700 hover:text-[#0284c7] transition"
+            >
+              <SlidersHorizontal className="h-4 w-4 stroke-[2]" />
+            </button>
+          </div>
+
+          {/* Location & Search Button Row */}
+          <div className="flex flex-col sm:flex-row items-stretch gap-2.5 sm:gap-3">
+            {/* Location Selector Pill */}
+            <div className="relative flex-1">
+              <button
+                type="button"
+                onClick={() => setShowCityDropdown(!showCityDropdown)}
+                className="w-full rounded-full bg-white/80 backdrop-blur-md border border-white/95 px-4 py-2 sm:py-2.5 flex items-center justify-between text-left hover:border-sky-300 transition shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <MapPin className="h-4 w-4 text-[#0284c7] shrink-0 fill-[#0284c7]/20" />
+                  <div className="truncate">
+                    <div className="text-[10px] font-bold text-slate-500 leading-none mb-0.5">Location</div>
+                    <div className="text-xs font-semibold text-slate-700 truncate">
+                      {selectedCity ? selectedCity : 'Select city or area'}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className={`h-3.5 w-3.5 text-slate-400 transition-transform ${showCityDropdown ? 'rotate-90' : ''}`} />
+              </button>
+
+              {/* City Dropdown Menu */}
+              {showCityDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1.5 z-30 rounded-2xl bg-white/95 backdrop-blur-xl p-2 shadow-xl border border-slate-200/80 animate-fadeUp">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">Popular Cities</div>
+                  {['Coimbatore', 'Chennai', 'Bangalore', 'Madurai', 'Salem', 'Erode', 'Tiruchirappalli'].map((city) => (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => handleCityClick(city)}
+                      className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition ${
+                        selectedCity === city
+                          ? 'bg-sky-50 text-[#0284c7] font-bold'
+                          : 'text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Submit Search Button - 3D Glossy Pill with Glow & Radiance Marks */}
+            <div className="relative inline-flex items-center">
+              <button
+                type="submit"
+                className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-7 py-2.5 sm:py-3 text-sm font-bold text-white shadow-[0_8px_25px_rgba(0,114,255,0.45),inset_0_2px_3px_rgba(255,255,255,0.7),inset_0_-2px_3px_rgba(0,0,0,0.15)] transition-all duration-300 hover:scale-105 active:scale-95 shrink-0"
+              >
+                <span className="absolute top-1 inset-x-4 h-2 rounded-full bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
+                <span>Search</span>
+                <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
+              </button>
+
+              {/* Radiance speed dashes (Exact reference style) */}
+              <div className="hidden sm:flex flex-col gap-1 ml-2 text-[#007cf8] select-none pointer-events-none">
+                <span className="inline-block w-3 h-[2.5px] rounded-full bg-[#007cf8] rotate-[25deg] translate-x-1" />
+                <span className="inline-block w-3.5 h-[2.5px] rounded-full bg-[#007cf8]" />
+                <span className="inline-block w-3 h-[2.5px] rounded-full bg-[#007cf8] -rotate-[25deg] translate-x-1" />
+              </div>
+            </div>
+
+          </div>
+        </form>
+
+        {/* City Filter Chips */}
+        <div className="mt-3 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 flex flex-nowrap sm:flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {popularCities.map((city) => {
+            const isSelected = selectedCity === city;
+            return (
+              <button
+                key={city}
+                type="button"
+                onClick={() => handleCityClick(city)}
+                className={`shrink-0 rounded-full px-3 py-1.5 sm:py-1 text-xs font-semibold transition-all ${
+                  isSelected
+                    ? 'bg-[#0284c7] text-white shadow-sm'
+                    : 'bg-white/65 hover:bg-white/90 text-slate-700 backdrop-blur-md border border-white/85 shadow-[0_2px_6px_rgba(0,0,0,0.02)]'
+                }`}
+              >
+                {city}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setShowCityDropdown(!showCityDropdown)}
+            className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-white/65 hover:bg-white/90 text-[#0284c7] backdrop-blur-md border border-white/85 px-3 py-1.5 sm:py-1 text-xs font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition"
+          >
+            More <ChevronDown className="h-3 w-3 text-[#0284c7]" />
+          </button>
+        </div>
+
+        {/* Bottom Quick Feature Cards - Ultra Glassmorphic */}
+        <div className="mt-3.5 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
+          {/* For Schools Card */}
+          <a
+            href="#/schools/dashboard"
+            className="group rounded-[22px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/90 p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(2,132,199,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:bg-white/80 hover:shadow-[0_12px_28px_rgba(2,132,199,0.14)] hover:border-sky-200 transition-all duration-300 flex items-center justify-between"
+          >
+            <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#dbeafe] via-[#bae6fd] to-[#7dd3fc] text-[#0284c7] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                <Building2 className="h-5 w-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-extrabold text-[#0284c7] group-hover:text-blue-700 transition-colors">
+                  For Schools
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium leading-tight mt-0.5">
+                  Manage your school & admissions.
+                </div>
+              </div>
+            </div>
+            <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-blue-100 text-[#0284c7] group-hover:bg-[#0284c7] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
+              <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
+            </div>
+          </a>
+
+          {/* For Teachers Card */}
+          <a
+            href="#/teachers"
+            className="group rounded-[22px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/90 p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(124,58,237,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:bg-white/80 hover:shadow-[0_12px_28px_rgba(124,58,237,0.14)] hover:border-purple-200 transition-all duration-300 flex items-center justify-between"
+          >
+            <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#f3e8ff] via-[#e9d5ff] to-[#d8b4fe] text-[#7c3aed] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                <GraduationCap className="h-5 w-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-extrabold text-[#7c3aed] group-hover:text-purple-700 transition-colors">
+                  For Teachers
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium leading-tight mt-0.5">
+                  Apply for teaching jobs easily.
+                </div>
+              </div>
+            </div>
+            <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-purple-100 text-[#7c3aed] group-hover:bg-[#7c3aed] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
+              <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
+            </div>
+          </a>
+        </div>
+
+      </div>
+  );
+
+  // Android app: compact header so the search card is visible as soon as the app opens.
+  if (isApp) {
+    return (
+      <section id="home" className="relative overflow-hidden bg-gradient-to-b from-[#cae8ff] via-[#e2f2ff] to-[#f4faff] pt-[76px] pb-5 select-none">
+        <div className="pointer-events-none absolute -top-16 left-1/2 h-64 w-[600px] -translate-x-1/2 rounded-full bg-white/80 blur-3xl" aria-hidden />
+        <div className="container-page relative">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-[#0284c7]">{session ? `Hi ${session.name.split(' ')[0]} 👋` : 'Welcome to Padasala 👋'}</p>
+              <h1 className="mt-1 font-display text-[22px] font-black leading-[1.15] tracking-tight text-[#0b1f33]">
+                Find the right <span className="text-[#0088ff]">school</span>, <span className="text-[#0088ff]">course</span>, teacher &{' '}
+                <span className="bg-gradient-to-r from-[#2563eb] via-[#7c3aed] to-[#9333ea] bg-clip-text text-transparent">event</span>
+              </h1>
+            </div>
+            <img src={studentBooksImg} alt="" className="w-[112px] -my-2 shrink-0 drop-shadow-lg" />
+          </div>
+
+          <div className="mt-3">{searchPanel}</div>
+
+          <div className="reveal-stagger mt-4 grid grid-cols-4 gap-2">
+            {appShortcuts.map(({ label, icon: Icon, href, tone }) => (
+              <a key={label} href={href} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/80 px-1 py-3 shadow-sm ring-1 ring-white active:scale-95 transition">
+                <span className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${tone} text-white shadow-md`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="text-center text-[11px] font-bold leading-tight text-slate-700">{label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -183,7 +422,7 @@ export function Hero() {
           <div className="lg:col-span-6 lg:pl-48 xl:pl-56 2xl:pl-64 space-y-3.5 sm:space-y-4 text-center lg:text-left animate-fadeUp">
             
             {/* Mobile-only Student Display */}
-            <div className="lg:hidden mx-auto w-32 sm:w-52 relative">
+            <div className="lg:hidden mx-auto w-48 sm:w-60 relative">
               <div className="pointer-events-none absolute top-3 left-6 w-12 h-12 bg-yellow-300/40 blur-lg rounded-full animate-glow-pulse" />
               <img
                 src={studentBooksImg}
@@ -219,8 +458,7 @@ export function Hero() {
 
             {/* Subheading / Description */}
             <p className="max-w-md mx-auto lg:mx-0 text-sm text-slate-700 leading-relaxed font-medium">
-              Padasala connects students, parents, schools, teachers and tuition centres. Discover verified schools,
-              prepare for NEET & JEE, apply for teaching jobs, join skill classes and never miss a school event.
+              Schools, NEET & JEE prep, teacher jobs, skill classes and events — all in one app.
             </p>
 
             {/* Action Buttons */}
@@ -238,7 +476,7 @@ export function Hero() {
 
               {/* Secondary CTA */}
               <a
-                href="#schools"
+                href="#/schools"
                 className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 hover:bg-white backdrop-blur-md border border-sky-300/80 hover:border-sky-400 px-3 sm:px-6 py-3 text-xs sm:text-sm font-bold text-[#0284c7] shadow-[0_4px_16px_rgba(2,132,199,0.08)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Compass className="h-4 w-4 text-[#0284c7] stroke-[2.4]" />
@@ -252,195 +490,7 @@ export function Hero() {
           {/* RIGHT 6 COLS: FROSTED GLASS SEARCH PANEL & QUICK ACTION CARDS */}
           {/* ===================================================================== */}
           <div className="lg:col-span-6 animate-fadeUp" style={{ animationDelay: '120ms' }}>
-            <div className="relative rounded-[26px] sm:rounded-[36px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/95 p-3.5 sm:p-6 shadow-[0_20px_50px_rgba(2,132,199,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-1px_2px_rgba(255,255,255,0.35)]">
-              
-              {/* Tab Switcher - 4 Glass Pill Buttons */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = tab.id === activeTab;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`relative flex items-center justify-center gap-1.5 rounded-2xl sm:rounded-full py-2.5 px-2.5 text-xs font-bold transition-all duration-300 ${
-                        isActive
-                          ? 'bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] text-white shadow-[0_8px_20px_rgba(0,114,255,0.4),inset_0_1.5px_2px_rgba(255,255,255,0.7)] scale-[1.02]'
-                          : 'bg-white/60 hover:bg-white/85 text-slate-700 backdrop-blur-md border border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-md hover:scale-[1.01]'
-                      }`}
-                    >
-                      <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-white stroke-[2.4]' : 'text-[#0284c7] stroke-[2.2]'}`} />
-                      <span className="truncate">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Search Form */}
-              <form onSubmit={handleSearchSubmit} className="mt-3.5 sm:mt-4 space-y-3">
-                {/* Search input pill */}
-                <div className="relative flex items-center rounded-full bg-white/80 backdrop-blur-md border border-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.02),inset_0_1px_2px_rgba(0,0,0,0.02)] px-4 sm:px-5 py-3 focus-within:ring-2 focus-within:ring-[#0ea5e9] focus-within:border-transparent transition-all">
-                  <Search className="h-4 w-4 text-slate-800 shrink-0 mr-2.5 stroke-[2.2]" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={currentTab.placeholder}
-                    className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    aria-label="Search filter options"
-                    className="ml-2 text-slate-700 hover:text-[#0284c7] transition"
-                  >
-                    <SlidersHorizontal className="h-4 w-4 stroke-[2]" />
-                  </button>
-                </div>
-
-                {/* Location & Search Button Row */}
-                <div className="flex flex-col sm:flex-row items-stretch gap-2.5 sm:gap-3">
-                  {/* Location Selector Pill */}
-                  <div className="relative flex-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowCityDropdown(!showCityDropdown)}
-                      className="w-full rounded-full bg-white/80 backdrop-blur-md border border-white/95 px-4 py-2 sm:py-2.5 flex items-center justify-between text-left hover:border-sky-300 transition shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <MapPin className="h-4 w-4 text-[#0284c7] shrink-0 fill-[#0284c7]/20" />
-                        <div className="truncate">
-                          <div className="text-[10px] font-bold text-slate-500 leading-none mb-0.5">Location</div>
-                          <div className="text-xs font-semibold text-slate-700 truncate">
-                            {selectedCity ? selectedCity : 'Select city or area'}
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight className={`h-3.5 w-3.5 text-slate-400 transition-transform ${showCityDropdown ? 'rotate-90' : ''}`} />
-                    </button>
-
-                    {/* City Dropdown Menu */}
-                    {showCityDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-1.5 z-30 rounded-2xl bg-white/95 backdrop-blur-xl p-2 shadow-xl border border-slate-200/80 animate-fadeUp">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">Popular Cities</div>
-                        {['Coimbatore', 'Chennai', 'Bangalore', 'Madurai', 'Salem', 'Erode', 'Tiruchirappalli'].map((city) => (
-                          <button
-                            key={city}
-                            type="button"
-                            onClick={() => handleCityClick(city)}
-                            className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                              selectedCity === city
-                                ? 'bg-sky-50 text-[#0284c7] font-bold'
-                                : 'text-slate-700 hover:bg-slate-50'
-                            }`}
-                          >
-                            {city}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Submit Search Button - 3D Glossy Pill with Glow & Radiance Marks */}
-                  <div className="relative inline-flex items-center">
-                    <button
-                      type="submit"
-                      className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-7 py-2.5 sm:py-3 text-sm font-bold text-white shadow-[0_8px_25px_rgba(0,114,255,0.45),inset_0_2px_3px_rgba(255,255,255,0.7),inset_0_-2px_3px_rgba(0,0,0,0.15)] transition-all duration-300 hover:scale-105 active:scale-95 shrink-0"
-                    >
-                      <span className="absolute top-1 inset-x-4 h-2 rounded-full bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
-                      <span>Search</span>
-                      <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
-                    </button>
-
-                    {/* Radiance speed dashes (Exact reference style) */}
-                    <div className="hidden sm:flex flex-col gap-1 ml-2 text-[#007cf8] select-none pointer-events-none">
-                      <span className="inline-block w-3 h-[2.5px] rounded-full bg-[#007cf8] rotate-[25deg] translate-x-1" />
-                      <span className="inline-block w-3.5 h-[2.5px] rounded-full bg-[#007cf8]" />
-                      <span className="inline-block w-3 h-[2.5px] rounded-full bg-[#007cf8] -rotate-[25deg] translate-x-1" />
-                    </div>
-                  </div>
-
-                </div>
-              </form>
-
-              {/* City Filter Chips */}
-              <div className="mt-3 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 flex flex-nowrap sm:flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar">
-                {popularCities.map((city) => {
-                  const isSelected = selectedCity === city;
-                  return (
-                    <button
-                      key={city}
-                      type="button"
-                      onClick={() => handleCityClick(city)}
-                      className={`shrink-0 rounded-full px-3 py-1.5 sm:py-1 text-xs font-semibold transition-all ${
-                        isSelected
-                          ? 'bg-[#0284c7] text-white shadow-sm'
-                          : 'bg-white/65 hover:bg-white/90 text-slate-700 backdrop-blur-md border border-white/85 shadow-[0_2px_6px_rgba(0,0,0,0.02)]'
-                      }`}
-                    >
-                      {city}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => setShowCityDropdown(!showCityDropdown)}
-                  className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-white/65 hover:bg-white/90 text-[#0284c7] backdrop-blur-md border border-white/85 px-3 py-1.5 sm:py-1 text-xs font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition"
-                >
-                  More <ChevronDown className="h-3 w-3 text-[#0284c7]" />
-                </button>
-              </div>
-
-              {/* Bottom Quick Feature Cards - Ultra Glassmorphic */}
-              <div className="mt-3.5 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
-                {/* For Schools Card */}
-                <a
-                  href="#register"
-                  className="group rounded-[22px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/90 p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(2,132,199,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:bg-white/80 hover:shadow-[0_12px_28px_rgba(2,132,199,0.14)] hover:border-sky-200 transition-all duration-300 flex items-center justify-between"
-                >
-                  <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
-                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#dbeafe] via-[#bae6fd] to-[#7dd3fc] text-[#0284c7] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
-                      <Building2 className="h-5 w-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-extrabold text-[#0284c7] group-hover:text-blue-700 transition-colors">
-                        For Schools
-                      </div>
-                      <div className="text-[11px] text-slate-600 font-medium leading-tight mt-0.5">
-                        Manage your school & admissions.
-                      </div>
-                    </div>
-                  </div>
-                  <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-blue-100 text-[#0284c7] group-hover:bg-[#0284c7] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
-                    <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
-                  </div>
-                </a>
-
-                {/* For Teachers Card */}
-                <a
-                  href="#jobs"
-                  className="group rounded-[22px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/90 p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(124,58,237,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:bg-white/80 hover:shadow-[0_12px_28px_rgba(124,58,237,0.14)] hover:border-purple-200 transition-all duration-300 flex items-center justify-between"
-                >
-                  <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
-                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#f3e8ff] via-[#e9d5ff] to-[#d8b4fe] text-[#7c3aed] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
-                      <GraduationCap className="h-5 w-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-extrabold text-[#7c3aed] group-hover:text-purple-700 transition-colors">
-                        For Teachers
-                      </div>
-                      <div className="text-[11px] text-slate-600 font-medium leading-tight mt-0.5">
-                        Apply for teaching jobs easily.
-                      </div>
-                    </div>
-                  </div>
-                  <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-purple-100 text-[#7c3aed] group-hover:bg-[#7c3aed] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
-                    <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
-                  </div>
-                </a>
-              </div>
-
-            </div>
+            {searchPanel}
           </div>
 
         </div>

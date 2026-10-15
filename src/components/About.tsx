@@ -305,7 +305,7 @@ export function About() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 lg:gap-12 xl:gap-14 items-center">
 
           {/* Left Column: Heading, Paragraphs, Trust Badges, 3D Hero Art & Promise Card */}
-          <div className="lg:col-span-5 space-y-5 sm:space-y-7 animate-fadeUp">
+          <div className="lg:col-span-5 space-y-5 sm:space-y-7 reveal">
             {/* Eyebrow Badge */}
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-[#edf4ff] border border-blue-200/80 shadow-[0_2px_8px_rgba(59,130,246,0.12)] px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider text-[#0284c7]">
@@ -324,10 +324,10 @@ export function About() {
             {/* Description Paragraphs */}
             <div className="space-y-3.5 text-sm sm:text-base text-slate-700 font-normal leading-relaxed">
               <p>
-                Padasala brings schools, students, teachers, tuition centres and events together on a <strong className="text-slate-900 font-bold">single trustworthy platform</strong>. We started with a simple idea — make it easy to find the right school, the right course and the right mentor, without endless calls and forms.
+                Schools, students, teachers and tutors on <strong className="text-slate-900 font-bold">one trusted platform</strong>.
               </p>
               <p>
-                Today we support verified school discovery, NEET & JEE preparation, teacher hiring, tuition and skill classes, and live school events — <strong className="text-slate-900 font-bold">all designed to stay relevant as education evolves</strong>.
+                Find the right school, course or mentor — <strong className="text-slate-900 font-bold">without endless calls and forms</strong>.
               </p>
             </div>
 
@@ -384,7 +384,7 @@ export function About() {
           </div>
 
           {/* Right Column: 6 Frosted Glass Feature Cards Grid (2 cols x 3 rows) */}
-          <div className="lg:col-span-7 rail [--rail-gutter:16px] md:grid md:grid-cols-2 gap-4 sm:gap-5">
+          <div className="reveal-stagger lg:col-span-7 rail [--rail-gutter:16px] md:grid md:grid-cols-2 gap-4 sm:gap-5">
             {points.map((p, idx) => {
               const Icon = p.icon;
               return (
