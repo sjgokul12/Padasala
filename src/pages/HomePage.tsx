@@ -10,6 +10,12 @@ import { Register } from '@/components/Register';
 import { About } from '@/components/About';
 import { Contact } from '@/components/Contact';
 
+// Home sections that are kept in the code but not shown right now. Set to true to bring one back.
+const showOnHome = {
+  courses: false, // "Courses for NEET, JEE, Board & beyond" — courses live on the Coaching page
+  teacherJobs: false, // "Teachers, find your next school" — teacher content is for teacher logins (Teacher Job Posting page)
+};
+
 export function HomePage() {
   return (
     <>
@@ -17,8 +23,8 @@ export function HomePage() {
       <Features />
       <Schools />
       <TrustStrip />
-      <Courses />
-      <Jobs />
+      {showOnHome.courses && <Courses />}
+      {showOnHome.teacherJobs && <Jobs />}
       <Tuition />
       <Events />
       <Register />

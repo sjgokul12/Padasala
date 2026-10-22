@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Truck, Building2, PackageSearch, Store } from 'lucide-react';
 import { useSession, openLogin } from '@/lib/auth';
+import { viewersOf } from '@/lib/access';
 import { useCollection, txt } from '@/lib/store';
 import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, FilterSelect, EnquiryButton, EnquiryInbox } from '@/components/ui';
 import { VendorCard, RequirementCard, MyPosts, grid } from '@/components/listings';
@@ -11,7 +12,9 @@ import { vendorFields, requirementCategories } from '@/data/forms';
 type Tab = 'requirements' | 'post' | 'directory';
 
 export function VendorsPage() {
-  const [tab, setTab] = useState<Tab>('requirements');
+  // Opens on the vendor list; vendors themselves can't see that list (see access.ts), so they start on their own posting.
+  const session = useSession();
+  const [tab, setTab] = useState<Tab>(session?.role === 'vendor' ? 'post' : 'directory');
   return (
     <>
       <PageHero
@@ -25,9 +28,9 @@ export function VendorsPage() {
           active={tab}
           onChange={setTab}
           tabs={[
+            { id: 'directory', label: 'Vendor List (Schools)', icon: Building2 },
             { id: 'requirements', label: 'School Requirements', icon: PackageSearch },
             { id: 'post', label: 'Post Company Details', icon: Store },
-            { id: 'directory', label: 'Vendor List (Schools)', icon: Building2 },
           ]}
         />
         <div className="mt-6">
@@ -38,7 +41,7 @@ export function VendorsPage() {
             </RequireRole>
           )}
           {tab === 'directory' && (
-            <RequireRole allow={['school']} reason="The vendor list is visible only to registered schools">
+            <RequireRole allow={viewersOf('vendor')} reason="The vendor list is visible only to registered schools">
               <VendorsForSchools />
             </RequireRole>
           )}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Briefcase, Search, UserPlus, Users } from 'lucide-react';
 import { useSession, openLogin } from '@/lib/auth';
+import { viewersOf } from '@/lib/access';
 import { useCollection, txt } from '@/lib/store';
 import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, FilterSelect, EnquiryButton, EnquiryInbox } from '@/components/ui';
 import { JobCard, TeacherCard, MyPosts, grid } from '@/components/listings';
@@ -38,7 +39,7 @@ export function TeachersPage() {
             </RequireRole>
           )}
           {tab === 'profiles' && (
-            <RequireRole allow={['school']} reason="Teacher profiles are visible only to registered schools">
+            <RequireRole allow={viewersOf('teacher')} reason="Teacher profiles are visible only to registered schools">
               <TeachersForSchools />
             </RequireRole>
           )}

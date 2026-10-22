@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   Search,
   MapPin,
-  Briefcase,
   BookOpen,
   CalendarDays,
   Sparkles,
@@ -12,8 +11,6 @@ import {
   ChevronRight,
   ChevronDown,
   Building2,
-  GraduationCap,
-  Users,
   ClipboardList,
   Megaphone,
   Truck,
@@ -21,14 +18,12 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { useSession } from '@/lib/auth';
 import studentBooksImg from '@/assets/student_books_transparent.png';
-import schoolBuildingImg from '@/assets/school_building_transparent.png';
 import gradCapImg from '@/assets/grad_cap_transparent.png';
 import noteStationeryImg from '@/assets/note_stationery_transparent.png';
 
 const tabs = [
   { id: 'schools', label: 'Schools', icon: Building2, placeholder: 'Search for school, course, teacher or event...' },
   { id: 'courses', label: 'Courses', icon: BookOpen, placeholder: 'Search NEET, JEE, Foundation, Skill courses...' },
-  { id: 'jobs', label: 'Teacher Jobs', icon: Briefcase, placeholder: 'Search subject, grade, school or location...' },
   { id: 'events', label: 'Events', icon: CalendarDays, placeholder: 'Search sports, science expo, cultural fests...' },
 ] as const;
 
@@ -36,15 +31,14 @@ const popularCities = ['Coimbatore', 'Chennai', 'Bangalore', 'Madurai', 'Salem']
 
 const bottomNavBadges = [
   { label: 'Schools', icon: Building2, href: '#schools' },
-  { label: 'Courses', icon: BookOpen, href: '#courses' },
-  { label: 'Teachers', icon: Users, href: '#jobs' },
+  { label: 'Courses', icon: BookOpen, href: '#/coaching/courses' },
   { label: 'Events', icon: CalendarDays, href: '#events' },
 ];
 
 // Shortcuts shown only in the Android app (the bottom bar already covers Schools, Coaching, Student, Events).
 const appShortcuts = [
   { label: 'Mock Test', icon: ClipboardList, href: '#/students', tone: 'from-[#009bf8] to-[#0062f5]' },
-  { label: 'Teacher Jobs', icon: Briefcase, href: '#/teachers', tone: 'from-emerald-500 to-green-600' },
+  { label: 'Tuition', icon: BookOpen, href: '#/coaching/academic', tone: 'from-emerald-500 to-green-600' },
   { label: 'Admissions', icon: Megaphone, href: '#/schools/updates', tone: 'from-amber-500 to-orange-600' },
   { label: 'Vendors', icon: Truck, href: '#/vendors', tone: 'from-[#8b5cf6] to-[#6d28d9]' },
 ];
@@ -67,16 +61,16 @@ export function Hero() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const page = { schools: '/schools', courses: '/coaching/courses', jobs: '/teachers', events: '/events' }[activeTab];
+    const page = { schools: '/schools', courses: '/coaching/courses', events: '/events' }[activeTab];
     window.location.hash = page;
   };
 
-  // The frosted search card (Schools / Courses / Teacher Jobs / Events). Shared by the website and app layouts.
+  // The frosted search card (Schools / Courses / Events). Shared by the website and app layouts.
   const searchPanel = (
       <div className="relative rounded-[26px] sm:rounded-[36px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/95 p-3.5 sm:p-6 shadow-[0_20px_50px_rgba(2,132,199,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-1px_2px_rgba(255,255,255,0.35)]">
         
-        {/* Tab Switcher - 4 Glass Pill Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+        {/* Tab Switcher */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = tab.id === activeTab;
@@ -213,7 +207,7 @@ export function Hero() {
         </div>
 
         {/* Bottom Quick Feature Cards - Ultra Glassmorphic */}
-        <div className="mt-3.5 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
+        <div className="mt-3.5 sm:mt-5 grid grid-cols-1 gap-2.5 sm:gap-3">
           {/* For Schools Card */}
           <a
             href="#/schools/dashboard"
@@ -237,28 +231,6 @@ export function Hero() {
             </div>
           </a>
 
-          {/* For Teachers Card */}
-          <a
-            href="#/teachers"
-            className="group rounded-[22px] bg-white/55 backdrop-blur-2xl border-[1.5px] border-white/90 p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(124,58,237,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:bg-white/80 hover:shadow-[0_12px_28px_rgba(124,58,237,0.14)] hover:border-purple-200 transition-all duration-300 flex items-center justify-between"
-          >
-            <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
-              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#f3e8ff] via-[#e9d5ff] to-[#d8b4fe] text-[#7c3aed] shrink-0 shadow-inner group-hover:scale-105 transition-transform">
-                <GraduationCap className="h-5 w-5 stroke-[2.2]" />
-              </div>
-              <div>
-                <div className="text-xs sm:text-sm font-extrabold text-[#7c3aed] group-hover:text-purple-700 transition-colors">
-                  For Teachers
-                </div>
-                <div className="text-[11px] text-slate-600 font-medium leading-tight mt-0.5">
-                  Apply for teaching jobs easily.
-                </div>
-              </div>
-            </div>
-            <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-full bg-white/95 border border-purple-100 text-[#7c3aed] group-hover:bg-[#7c3aed] group-hover:text-white transition-all shrink-0 ml-1.5 shadow-sm">
-              <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
-            </div>
-          </a>
         </div>
 
       </div>
@@ -362,17 +334,6 @@ export function Hero() {
         </div>
       </div>
 
-      {/* 3D Miniature School Campus in Background (Left-Center) - Moved UP */}
-      <div className="pointer-events-none hidden lg:block absolute bottom-8 sm:bottom-12 lg:bottom-10 xl:bottom-16 left-[18%] sm:left-[21%] lg:left-[23%] xl:left-[25%] -translate-x-1/2 w-44 sm:w-52 lg:w-60 xl:w-68 2xl:w-72 z-0 opacity-85 transition-all duration-700">
-        <div className="relative overflow-visible">
-          <img
-            src={schoolBuildingImg}
-            alt="School Campus Building"
-            className="w-full h-auto drop-shadow-lg"
-          />
-        </div>
-      </div>
-
       {/* Floating 3D Graduation Cap (Top Right) */}
       <div className="pointer-events-none absolute top-24 sm:top-16 right-2 sm:right-10 lg:right-14 z-0 sm:z-20 w-16 sm:w-32 md:w-36 lg:w-40 animate-float-slow opacity-80 sm:opacity-95">
         <div className="relative overflow-visible">
@@ -458,26 +419,15 @@ export function Hero() {
 
             {/* Subheading / Description */}
             <p className="max-w-md mx-auto lg:mx-0 text-sm text-slate-700 leading-relaxed font-medium">
-              Schools, NEET & JEE prep, teacher jobs, skill classes and events — all in one app.
+              Schools, NEET & JEE prep, coaching, skill classes and events — all in one app.
             </p>
 
             {/* Action Buttons */}
-            <div className="pt-1 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
-              {/* Primary CTA */}
-              <a
-                href="#register"
-                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] hover:from-[#007cf8] hover:to-[#0050d8] px-3 sm:px-7 py-3 text-xs sm:text-sm font-bold text-white shadow-[0_8px_25px_rgba(0,114,255,0.38),inset_0_1.5px_2px_rgba(255,255,255,0.6)] transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,114,255,0.5)] hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <span>
-                  🚀 Get started<span className="hidden min-[400px]:inline"> free</span>
-                </span>
-                <ArrowRight className="h-4 w-4 stroke-[2.5]" />
-              </a>
-
+            <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-3">
               {/* Secondary CTA */}
               <a
                 href="#/schools"
-                className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 hover:bg-white backdrop-blur-md border border-sky-300/80 hover:border-sky-400 px-3 sm:px-6 py-3 text-xs sm:text-sm font-bold text-[#0284c7] shadow-[0_4px_16px_rgba(2,132,199,0.08)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 hover:bg-white backdrop-blur-md border border-sky-300/80 hover:border-sky-400 px-6 py-3 text-sm font-bold text-[#0284c7] shadow-[0_4px_16px_rgba(2,132,199,0.08)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Compass className="h-4 w-4 text-[#0284c7] stroke-[2.4]" />
                 <span>Explore schools</span>

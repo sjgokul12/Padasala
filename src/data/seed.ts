@@ -120,8 +120,13 @@ const vendors: Seed[] = [
   { id: 'v4', ...own('seed-vendor-4', 'SchoolSoft Tamil', 4), company: 'SchoolSoft Tamil', category: 'Software', services: 'School ERP — fees, attendance, report cards, parent app', experience: '5', locations: ['All Tamil Nadu'], contactPerson: 'Dinesh K', phone: '9876555004', email: 'demo@schoolsoft.example', about: 'Tamil and English interface, WhatsApp alerts for parents.' },
 ];
 
+const studentProfiles: Seed[] = [
+  { id: 'stp1', ...own('demo-student', 'Arjun Kumar', 30), name: 'Arjun Kumar', phone: '9876500001', classLevel: 'Class 11', targetExam: 'NEET', school: 'Sunrise International School', board: 'CBSE', district: 'Coimbatore', parentName: 'Kumar R', email: '' },
+];
+
 export const seeds = {
   users,
+  studentProfiles,
   schoolProfiles,
   jobs,
   events,

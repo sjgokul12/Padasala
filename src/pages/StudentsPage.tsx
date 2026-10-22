@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import {
   GraduationCap, ClipboardList, PencilLine, History, Atom, FlaskConical, Leaf, Dna, Layers, FileClock, Play, Info, Timer,
+  UserPlus, LogOut, Pencil, Target, MapPin,
 } from 'lucide-react';
-import { useSession } from '@/lib/auth';
-import { useCollection, txt } from '@/lib/store';
+import { useSession, register, logout, openLogin, roles } from '@/lib/auth';
+import { useCollection, txt, type Post } from '@/lib/store';
 import { useQuestionBank } from '@/lib/questionBank';
-import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, Chip } from '@/components/ui';
+import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, Chip, Modal } from '@/components/ui';
 import { TuitionRequestCard, MyPosts } from '@/components/listings';
 import { MockTest, buildPaper, SECONDS_PER_QUESTION, type AttemptResult } from '@/components/MockTest';
-import { tuitionRequestFields } from '@/data/forms';
+import { tuitionRequestFields, studentProfileFields } from '@/data/forms';
 import type { Question, Subject } from '@/data/questions';
 
 type Tab = 'tests' | 'tuition' | 'history';
@@ -21,11 +22,19 @@ const subjectCards: { id: Subject; icon: typeof Atom; tone: string }[] = [
 ];
 
 export function StudentsPage() {
+  const session = useSession();
   const [tab, setTab] = useState<Tab>('tests');
+  const profiles = useCollection('studentProfiles');
+  const profile = session ? profiles.items.find((p) => p.ownerId === session.id) : undefined;
+
+  // Step 1: create a student account (or complete the profile). Student profiles are private (see access.ts).
+  if (session?.role !== 'student' || !profile) return <StudentOnboarding />;
 
   return (
     <>
+      <StudentProfileCard profile={profile} />
       <PageHero
+        flush
         icon={GraduationCap}
         eyebrow="Students"
         title={<>NEET mock tests & <span className="text-[#0284c7]">tuition you need</span></>}
@@ -48,6 +57,130 @@ export function StudentsPage() {
         </div>
       </div>
     </>
+  );
+}
+
+/* ---------- Student account & profile ---------- */
+
+function StudentOnboarding() {
+  const session = useSession();
+  const profiles = useCollection('studentProfiles');
+  const otherRole = session && session.role !== 'student';
+  // A student who registered elsewhere (e.g. the home page form) only needs to complete the profile.
+  const completing = session?.role === 'student';
+
+  return (
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#cae8ff] via-[#e6f4ff] to-white pt-[88px] sm:pt-32 pb-16">
+      <div className="container-page relative max-w-3xl">
+        <div className="reveal text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#009bf8] to-[#0062f5] text-white shadow-lg">
+            <UserPlus className="h-7 w-7" />
+          </span>
+          <h1 className="mt-4 font-display text-[26px] sm:text-4xl font-black tracking-tight text-[#0b1f33]">
+            {completing ? 'Complete your student profile' : 'Create your student account'}
+          </h1>
+          <p className="mt-2 text-sm sm:text-base text-slate-600">Takes a minute — then take NEET mock tests and find tuition.</p>
+        </div>
+
+        {otherRole ? (
+          <Card className="reveal mt-6 p-6 text-center">
+            <p className="font-display font-bold text-[#0b1f33]">You are logged in as {roles[session.role].label}.</p>
+            <p className="mt-1 text-sm text-slate-500">The student section is only for students and parents.</p>
+            <button onClick={logout} className="btn-primary mt-4 px-6"><LogOut className="h-4 w-4" /> Logout and create a student account</button>
+          </Card>
+        ) : (
+          <Card className="reveal mt-6 p-5 sm:p-8">
+            <DynamicForm
+              submitLabel={completing ? 'Save profile' : 'Create student account'}
+              initial={completing ? { name: session.name } : undefined}
+              fields={completing ? studentProfileFields : [...studentProfileFields, { name: 'password', label: 'Create password', type: 'password', required: true }]}
+              onSubmit={(values) => {
+                const { password: _unused, ...v } = values; // the password is not stored until a backend exists
+                void _unused;
+                const s = completing
+                  ? session
+                  : register({ role: 'student', name: txt(v.name), phone: txt(v.phone), email: txt(v.email), district: txt(v.district) });
+                profiles.add(v, s);
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // the new profile card appears at the top
+              }}
+            />
+            {!completing && (
+              <p className="mt-5 text-center text-sm text-slate-600">
+                Already have a student account?{' '}
+                <button onClick={() => openLogin('student')} className="font-bold text-[#0284c7]">Login</button>
+              </p>
+            )}
+          </Card>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function StudentProfileCard({ profile }: { profile: Post }) {
+  const profiles = useCollection('studentProfiles');
+  const attempts = useCollection('attempts').items.filter((a) => a.ownerId === profile.ownerId);
+  const requests = useCollection('tuitionRequests').items.filter((r) => r.ownerId === profile.ownerId);
+  const [editing, setEditing] = useState(false);
+  const best = attempts.reduce((m, a) => Math.max(m, Math.round((Number(a.score) / Number(a.max)) * 100)), 0);
+  const name = txt(profile.name);
+
+  return (
+    <section className="bg-gradient-to-b from-[#cae8ff] to-[#e6f4ff] pt-[88px] sm:pt-28">
+      <div className="container-page">
+        <div className="reveal relative overflow-hidden rounded-[28px] bg-white p-5 sm:p-7 shadow-[0_20px_45px_-24px_rgba(2,132,199,0.55)] ring-1 ring-white">
+          <span className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-sky-200/70 to-violet-200/50 blur-2xl" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              {profile.photo ? (
+                <img src={txt(profile.photo)} alt={name} className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-full object-cover ring-4 ring-sky-100" />
+              ) : (
+                <span className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#009bf8] to-[#7c3aed] font-display text-2xl font-black text-white ring-4 ring-sky-100">
+                  {name.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-[#0284c7]">Student profile</div>
+                <h1 className="truncate font-display text-xl sm:text-2xl font-black text-[#0b1f33]">{name}</h1>
+                <p className="truncate text-sm text-slate-600">
+                  {txt(profile.classLevel)}{profile.school ? ` · ${txt(profile.school)}` : ''}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <Chip tone="violet"><Target className="h-3 w-3" /> {txt(profile.targetExam)}</Chip>
+                  <Chip tone="slate"><MapPin className="h-3 w-3" /> {txt(profile.district)}</Chip>
+                  {profile.board && <Chip>{txt(profile.board)}</Chip>}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 sm:w-[300px]">
+              {[
+                { label: 'Tests', value: attempts.length },
+                { label: 'Best score', value: attempts.length ? `${best}%` : '—' },
+                { label: 'Tuition asks', value: requests.length },
+              ].map((s) => (
+                <div key={s.label} className="rounded-2xl bg-sky-50/80 px-2 py-2.5 text-center ring-1 ring-sky-100">
+                  <div className="font-display text-lg font-black text-[#0b1f33]">{s.value}</div>
+                  <div className="text-[11px] font-semibold text-slate-500">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="relative mt-4 flex flex-wrap gap-2">
+            <button onClick={() => setEditing(true)} className="btn-outline px-4 py-2 text-sm"><Pencil className="h-4 w-4" /> Edit profile</button>
+            <button onClick={logout} className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-rose-600 ring-1 ring-rose-100 hover:bg-rose-50"><LogOut className="h-4 w-4" /> Logout</button>
+          </div>
+        </div>
+      </div>
+      <Modal open={editing} onClose={() => setEditing(false)} title="Edit student profile" wide>
+        <DynamicForm
+          fields={studentProfileFields}
+          initial={profile}
+          reset={false}
+          submitLabel="Save profile"
+          onSubmit={(v) => { profiles.update(profile.id, v); window.setTimeout(() => setEditing(false), 700); }}
+        />
+      </Modal>
+    </section>
   );
 }
 

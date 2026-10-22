@@ -24,7 +24,7 @@ export const schoolProfileFields: FieldDef[] = [
   { name: 'established', label: 'Year established', type: 'number' },
   { name: 'students', label: 'Number of students', type: 'number' },
   { name: 'teachers', label: 'Number of teachers', type: 'number' },
-  { name: 'image', label: 'Photo link (optional)', type: 'url', placeholder: 'https://… image of your campus', full: true },
+  { name: 'image', label: 'Upload school photo', type: 'image' },
   { name: 'courses', label: 'Courses & programmes offered', type: 'multi', options: ['NEET Foundation', 'JEE Foundation', 'Board Excellence', 'NEET Crash', 'Board Booster', 'Olympiad Prep', 'Spoken English', 'Chess Academy', 'Abacus', 'Silambam', 'Robotics & Coding', 'Music & Dance'] },
   { name: 'about', label: 'About the school', type: 'textarea' },
 ];
@@ -50,7 +50,7 @@ export const eventFields: FieldDef[] = [
   district,
   { name: 'whatsapp', label: 'WhatsApp number for invitations', type: 'tel', required: true },
   { name: 'registerLink', label: 'Registration link (optional)', type: 'url', placeholder: 'https://' },
-  { name: 'image', label: 'Poster / photo link (optional)', type: 'url', placeholder: 'https://' },
+  { name: 'image', label: 'Upload event poster / photo', type: 'image' },
   { name: 'description', label: 'Description', type: 'textarea' },
 ];
 
@@ -115,6 +115,21 @@ export const coachingFields = (cat: CoachingCategory): FieldDef[] => [
   { name: 'area', label: 'Area / locality', required: true },
   { name: 'phone', label: 'Contact number', type: 'tel', required: true },
   { name: 'achievements', label: 'Achievements', type: 'textarea', placeholder: 'Results, medals, certifications…' },
+];
+
+export const classLevels = ['Class 1-5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12', 'NEET / JEE repeater', 'College', 'Other'];
+
+export const studentProfileFields: FieldDef[] = [
+  { name: 'photo', label: 'Profile photo (optional)', type: 'image' },
+  { name: 'name', label: 'Student name', required: true },
+  { name: 'phone', label: 'Mobile number', type: 'tel', required: true },
+  { name: 'classLevel', label: 'Class', type: 'select', options: classLevels, required: true },
+  { name: 'targetExam', label: 'Preparing for', type: 'select', options: ['NEET', 'JEE', 'Board exams', 'Foundation / Olympiad', 'Other'], required: true },
+  { name: 'school', label: 'School name' },
+  { name: 'board', label: 'Board', type: 'select', options: ['CBSE', 'State Board', 'Matriculation', 'ICSE', 'Other'] },
+  district,
+  { name: 'parentName', label: 'Parent / guardian name' },
+  { name: 'email', label: 'Email', type: 'email' },
 ];
 
 export const tuitionRequestFields: FieldDef[] = [

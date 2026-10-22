@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BookOpen, Search, PlusCircle, Users, GraduationCap, Palette, Target } from 'lucide-react';
 import { useRoute, navigate } from '@/lib/router';
 import { useSession } from '@/lib/auth';
+import { viewersOf } from '@/lib/access';
 import { useCollection, txt } from '@/lib/store';
 import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, FilterSelect, EnquiryInbox } from '@/components/ui';
 import { CoachingCard, TuitionRequestCard, MyPosts, grid } from '@/components/listings';
@@ -126,29 +127,30 @@ function PostCentre({ cat }: { cat: CoachingCategory }) {
   );
 }
 
+// Students' tuition requests are visible only to coaching centres (see src/lib/access.ts).
 function StudentRequests() {
-  const session = useSession();
+  return (
+    <RequireRole allow={viewersOf('tuitionRequest')} reason="Student requirements are visible only to coaching centres">
+      <StudentRequestList />
+    </RequireRole>
+  );
+}
+
+function StudentRequestList() {
   const { items } = useCollection('tuitionRequests');
   const [district, setDistrict] = useState('');
-  const canSeeContact = session?.role === 'coaching';
   const list = items.filter((r) => !district || r.district === district);
 
   return (
     <>
       <Card className="mb-5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-br from-sky-50 to-white">
         <p className="text-sm text-slate-600">
-          Students post what tuition they need and where.{' '}
-          {canSeeContact ? <b className="text-emerald-700">You can see their contact details.</b> : <b>Contact details are visible only to logged-in coaching centres.</b>}
+          Students post what tuition they need and where. <b className="text-emerald-700">Call them directly.</b>
         </p>
         <FilterSelect label="All districts" value={district} onChange={setDistrict} options={districts} />
       </Card>
-      {!canSeeContact && (
-        <div className="mb-5">
-          <RequireRole allow={['coaching']} reason="Login as a coaching centre to see contact numbers"><span /></RequireRole>
-        </div>
-      )}
       {list.length === 0 ? <EmptyState title="No requirements in this district yet" /> : (
-        <div className={grid}>{list.map((r) => <TuitionRequestCard key={r.id} post={r} showContact={canSeeContact} />)}</div>
+        <div className={grid}>{list.map((r) => <TuitionRequestCard key={r.id} post={r} showContact />)}</div>
       )}
     </>
   );

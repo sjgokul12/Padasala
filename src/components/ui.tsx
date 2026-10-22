@@ -1,15 +1,23 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { X, Lock, CheckCircle2, Inbox, Send, type LucideIcon } from 'lucide-react';
+import { X, Lock, CheckCircle2, Inbox, Send, ImagePlus, type LucideIcon } from 'lucide-react';
 import { useSession, openLogin, roles, type Role } from '@/lib/auth';
 import { useCollection, type Value } from '@/lib/store';
 
 /* ---------- Page banner ---------- */
 
 export function PageHero({
-  eyebrow, title, subtitle, icon: Icon, children,
-}: { eyebrow: string; title: ReactNode; subtitle?: ReactNode; icon: LucideIcon; children?: ReactNode }) {
+  eyebrow, title, subtitle, icon: Icon, children, flush,
+}: {
+  eyebrow: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
+  icon: LucideIcon;
+  children?: ReactNode;
+  /** Placed below other content rather than at the page top, so no room for the fixed header is needed. */
+  flush?: boolean;
+}) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#cae8ff] via-[#e6f4ff] to-white pt-[88px] sm:pt-32 pb-6 sm:pb-12">
+    <section className={`relative overflow-hidden bg-gradient-to-b from-[#cae8ff] via-[#e6f4ff] to-white ${flush ? 'pt-6 sm:pt-10' : 'pt-[88px] sm:pt-32'} pb-6 sm:pb-12`}>
       <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[360px] bg-white/70 blur-3xl rounded-full" aria-hidden />
       <div className="container-page relative reveal">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 border border-sky-200 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#0284c7] shadow-sm">
@@ -104,7 +112,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
 export interface FieldDef {
   name: string;
   label: string;
-  type?: 'text' | 'textarea' | 'select' | 'date' | 'time' | 'number' | 'tel' | 'email' | 'url' | 'multi';
+  type?: 'text' | 'textarea' | 'select' | 'date' | 'time' | 'number' | 'tel' | 'email' | 'url' | 'password' | 'multi' | 'image';
   options?: string[];
   required?: boolean;
   placeholder?: string;
@@ -143,14 +151,16 @@ export function DynamicForm({
     >
       {fields.map((f) => {
         const id = `f-${f.name}`;
-        const span = f.full || f.type === 'textarea' || f.type === 'multi' ? 'sm:col-span-2' : '';
+        const span = f.full || f.type === 'textarea' || f.type === 'multi' || f.type === 'image' ? 'sm:col-span-2' : '';
         const value = values[f.name];
         return (
           <div key={f.name} className={span}>
             <label className="label" htmlFor={id}>
               {f.label} {f.required && <span className="text-rose-500">*</span>}
             </label>
-            {f.type === 'textarea' ? (
+            {f.type === 'image' ? (
+              <ImageUpload id={id} value={String(value ?? '')} onChange={(v) => set(f.name, v)} />
+            ) : f.type === 'textarea' ? (
               <textarea id={id} rows={3} required={f.required} placeholder={f.placeholder} className="input resize-none" value={String(value)} onChange={(e) => set(f.name, e.target.value)} />
             ) : f.type === 'select' ? (
               <select id={id} required={f.required} className="input" value={String(value)} onChange={(e) => set(f.name, e.target.value)}>
@@ -205,6 +215,94 @@ export function DynamicForm({
   );
 }
 
+/* ---------- Image upload ---------- */
+
+/** Resize a photo on the device and return it as a compact JPEG data URL (keeps storage small). */
+async function compressImage(file: File, maxSide = 1000, quality = 0.78): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('This file could not be read as an image.'));
+      el.src = url;
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#fff'; // transparent PNGs get a white background in JPEG
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', quality);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+export function ImageUpload({ id, value, onChange, round }: { id: string; value: string; onChange: (dataUrl: string) => void; round?: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const pick = async (file?: File) => {
+    if (!file) return;
+    setError('');
+    if (!file.type.startsWith('image/')) return setError('Please choose an image file (JPG, PNG, WebP).');
+    if (file.size > 20 * 1024 * 1024) return setError('That image is larger than 20 MB. Please choose a smaller one.');
+    setBusy(true);
+    try {
+      onChange(await compressImage(file));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not upload this image.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const input = (
+    <input
+      id={id}
+      type="file"
+      accept="image/*"
+      className="sr-only"
+      onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ''; }}
+    />
+  );
+
+  return (
+    <div>
+      {value ? (
+        <div className={`relative overflow-hidden ring-1 ring-slate-200 ${round ? 'h-28 w-28 rounded-full' : 'h-44 sm:h-52 w-full rounded-2xl'}`}>
+          <img src={value} alt="Uploaded" className="h-full w-full object-cover" />
+          <div className={`absolute flex gap-1.5 ${round ? 'inset-x-0 bottom-1 justify-center' : 'right-2 top-2'}`}>
+            <label htmlFor={id} className="cursor-pointer rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-[#0284c7] shadow">
+              {busy ? '…' : 'Change'}
+            </label>
+            <button type="button" onClick={() => onChange('')} aria-label="Remove image" className="flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-rose-500 shadow">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          {input}
+        </div>
+      ) : (
+        <label
+          htmlFor={id}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 border-2 border-dashed border-sky-200 bg-sky-50/50 text-center transition hover:border-sky-300 hover:bg-sky-50 ${round ? 'h-28 w-28 rounded-full' : 'rounded-2xl px-4 py-7'}`}
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#0284c7] shadow-sm ring-1 ring-sky-100">
+            <ImagePlus className="h-5 w-5" />
+          </span>
+          <span className="text-sm font-bold text-[#0284c7]">{busy ? 'Uploading…' : 'Upload image'}</span>
+          {!round && <span className="text-xs text-slate-500">From gallery or camera · JPG, PNG</span>}
+          {input}
+        </label>
+      )}
+      {error && <p className="mt-2 text-sm font-semibold text-rose-600">{error}</p>}
+    </div>
+  );
+}
+
 /* ---------- Small pieces ---------- */
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -237,6 +335,8 @@ export function EmptyState({ title, text }: { title: string; text?: string }) {
 export function RequireRole({ allow, children, reason }: { allow: Role[]; children: ReactNode; reason: string }) {
   const session = useSession();
   if (session && allow.includes(session.role)) return <>{children}</>;
+  // The admin login is never advertised to visitors.
+  const loginAs = allow.filter((r) => r !== 'admin');
   return (
     <div className="rounded-3xl bg-gradient-to-br from-sky-50 to-white ring-1 ring-sky-100 px-5 py-8 sm:p-10 text-center">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0284c7] shadow-sm ring-1 ring-sky-100">
@@ -245,10 +345,10 @@ export function RequireRole({ allow, children, reason }: { allow: Role[]; childr
       <p className="mt-3 font-display text-lg font-extrabold text-[#0b1f33]">{reason}</p>
       <p className="mt-1 text-sm text-slate-500">
         {session ? `You are logged in as ${roles[session.role].label}. ` : ''}
-        Login as {allow.map((r) => roles[r].label).join(' or ')} to continue.
+        Login as {loginAs.map((r) => roles[r].label).join(' or ')} to continue.
       </p>
       <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-        {allow.map((r) => (
+        {loginAs.map((r) => (
           <button key={r} onClick={() => openLogin(r)} className="btn-primary px-5 text-sm">
             Login as {roles[r].label}
           </button>

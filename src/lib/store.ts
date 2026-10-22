@@ -55,8 +55,11 @@ function write<T>(key: string, value: T) {
   if (persisted(key)) {
     try {
       localStorage.setItem(PREFIX + key, JSON.stringify(value));
-    } catch {
-      // Ignore quota / private-mode errors; the in-memory value still updates.
+    } catch (e) {
+      // The in-memory value still updates; tell the user if the device storage is full (usually many photos).
+      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+        window.alert('This device is out of space for Padasala data. Remove a few photos or posts and try again.');
+      }
     }
   }
   listeners.get(key)?.forEach((l) => l());
