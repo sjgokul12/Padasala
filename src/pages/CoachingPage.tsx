@@ -5,7 +5,8 @@ import { useSession } from '@/lib/auth';
 import { viewersOf } from '@/lib/access';
 import { useCollection, txt } from '@/lib/store';
 import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, FilterSelect, EnquiryInbox } from '@/components/ui';
-import { CoachingCard, TuitionRequestCard, MyPosts, grid } from '@/components/listings';
+import { CoachingCard, TuitionRequestCard, MyPosts, ManageActions, grid } from '@/components/listings';
+import type { Post } from '@/lib/store';
 import { districts } from '@/data/districts';
 import { coachingCategoryInfo, coachingFields, type CoachingCategory } from '@/data/forms';
 
@@ -21,7 +22,6 @@ export function CoachingPage() {
   const { segments } = useRoute();
   const cat: CoachingCategory = (['academic', 'extra', 'courses'] as const).find((c) => c === segments[1]) ?? 'academic';
   const [view, setView] = useState<View>('browse');
-  const info = coachingCategoryInfo[cat];
 
   return (
     <>
@@ -37,7 +37,7 @@ export function CoachingPage() {
           {catTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => navigate(`/coaching/${id}`)}
+              onClick={() => { navigate(`/coaching/${id}`); setView('browse'); }}
               className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-2xl sm:rounded-full px-2 py-3 text-center text-xs sm:text-sm font-bold transition ${
                 cat === id ? 'bg-[#0b1f33] text-white shadow-lg' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-sky-300'
               }`}
@@ -47,18 +47,18 @@ export function CoachingPage() {
           ))}
         </div>
 
+        {/* The listing is the default view (chosen with the category buttons above); tapping an active tab again returns to it. */}
         <Tabs<View>
           active={view}
-          onChange={setView}
+          onChange={(v) => setView(v === view ? 'browse' : v)}
           tabs={[
-            { id: 'browse', label: `Find ${info.title}`, icon: Search },
             { id: 'post', label: 'Post your centre', icon: PlusCircle },
             { id: 'requests', label: 'Student Requirements', icon: Users },
           ]}
         />
 
         <div className="mt-6">
-          {view === 'browse' && <Browse cat={cat} />}
+          {view === 'browse' && <Browse cat={cat} onAdd={() => setView('post')} />}
           {view === 'post' && (
             <RequireRole allow={['coaching']} reason="Only coaching centres and tutors can post here">
               <PostCentre cat={cat} />
@@ -71,15 +71,18 @@ export function CoachingPage() {
   );
 }
 
-function Browse({ cat }: { cat: CoachingCategory }) {
+function Browse({ cat, onAdd }: { cat: CoachingCategory; onAdd: () => void }) {
   const { items } = useCollection('coaching');
+  const session = useSession();
+  // The logged-in centre's own cards are shown first (with Edit/Delete), not repeated in the main list.
+  const mine = session?.role === 'coaching' ? items.filter((c) => c.category === cat && c.ownerId === session.id) : [];
   const [q, setQ] = useState('');
   const [district, setDistrict] = useState('');
   const [provider, setProvider] = useState('');
   const [maxFee, setMaxFee] = useState('');
 
   const list = items
-    .filter((c) => c.category === cat)
+    .filter((c) => c.category === cat && !mine.includes(c))
     .filter((c) => !q || `${txt(c.name)} ${txt(c.subjects)} ${txt(c.area)}`.toLowerCase().includes(q.toLowerCase()))
     .filter((c) => !district || c.district === district)
     .filter((c) => !provider || c.providerType === provider)
@@ -87,6 +90,23 @@ function Browse({ cat }: { cat: CoachingCategory }) {
 
   return (
     <>
+      {session?.role === 'coaching' && (
+        <section className="mb-8 rounded-[28px] bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-4 sm:p-6 ring-1 ring-emerald-100">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg sm:text-xl font-extrabold text-[#0b1f33]">Your centre — {session.name}</h2>
+              <p className="text-sm text-slate-500">Only you can see Edit and Delete on these cards.</p>
+            </div>
+            <button onClick={onAdd} className="btn-primary px-4 py-2 text-sm"><PlusCircle className="h-4 w-4" /> Add {mine.length ? 'another' : 'your centre'}</button>
+          </div>
+          {mine.length === 0 ? (
+            <EmptyState title={`You have no ${coachingCategoryInfo[cat].title} listing yet`} text="Tap “Add your centre” to post your subjects, experience and monthly fee." />
+          ) : (
+            <div className={grid}>{mine.map((c) => <CoachingCard key={c.id} post={c} manage={<CoachingManage post={c} />} />)}</div>
+          )}
+        </section>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-2.5 mb-5">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -121,7 +141,7 @@ function PostCentre({ cat }: { cat: CoachingCategory }) {
         </p>
         <DynamicForm key={cat} fields={coachingFields(cat)} initial={{ name: session.name }} onSubmit={(v) => store.add({ ...v, category: cat }, session)} />
       </Card>
-      <MyPosts collection="coaching" render={(p) => <CoachingCard post={p} />} title="Your listings" />
+      <MyPosts collection="coaching" render={(p) => <CoachingCard post={p} manage={<CoachingManage post={p} />} />} title="Your listings" hideDelete />
       <EnquiryInbox />
     </div>
   );
@@ -154,4 +174,10 @@ function StudentRequestList() {
       )}
     </>
   );
+}
+
+/** Edit / Delete on a coaching card (visible only to the centre that posted it, or the admin). */
+function CoachingManage({ post }: { post: Post }) {
+  const category = ((post.category as CoachingCategory) in coachingCategoryInfo ? post.category : 'academic') as CoachingCategory;
+  return <ManageActions post={post} collection="coaching" fields={coachingFields(category)} what="coaching listing" />;
 }

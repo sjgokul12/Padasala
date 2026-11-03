@@ -2,9 +2,13 @@ import { useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { LoginModal } from '@/components/LoginModal';
+import { OtpDialog } from '@/components/OtpDialog';
 import { useRoute } from '@/lib/router';
 import { useScrollReveal } from '@/lib/reveal';
+import { verifySession } from '@/lib/auth';
+import { useDistrictsFromDatabase } from '@/lib/districts';
 import { HomePage, AboutPage } from '@/pages/HomePage';
 import { SchoolsPage } from '@/pages/SchoolsPage';
 import { CoachingPage } from '@/pages/CoachingPage';
@@ -27,6 +31,11 @@ const pages: Record<string, () => JSX.Element> = {
 
 function App() {
   useScrollReveal();
+  useDistrictsFromDatabase();
+  // Confirm the saved login with the backend once at start-up.
+  useEffect(() => {
+    verifySession();
+  }, []);
   const { path, segments, anchor } = useRoute();
   const Page = pages[segments[0]] ?? HomePage;
 
@@ -44,7 +53,9 @@ function App() {
       </main>
       <Footer />
       <MobileNav />
+      <WhatsAppButton />
       <LoginModal />
+      <OtpDialog />
     </div>
   );
 }

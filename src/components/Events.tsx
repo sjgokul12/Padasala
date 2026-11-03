@@ -15,8 +15,12 @@ import {
   Swords,
   Crown,
   Flower2,
+  Clock,
 } from 'lucide-react';
-import { events } from '@/data/content';
+import { useCollection, txt } from '@/lib/store';
+import { useSession } from '@/lib/auth';
+import { todayIso, isPublished } from './listings';
+import { formatDate } from './ui';
 import bookAirplaneImg from '@/assets/book_airplane_3d.jpg';
 import calendar3dImg from '@/assets/calendar_3d.jpg';
 
@@ -35,7 +39,33 @@ const categoryBadgesRight: Record<string, { icon: typeof Swords; bg: string; col
   'Annual Cultural Fest — Rangoli': { icon: Flower2, bg: 'bg-pink-50 border-pink-200/80', color: 'text-pink-600' },
 };
 
+/** Next upcoming events posted by schools and organizers (from the database when the backend is connected). */
+function useUpcomingEvents() {
+  const today = todayIso();
+  return useCollection('events')
+    .items.filter((e) => isPublished(e) && txt(e.date) >= today)
+    .sort((a, b) => txt(a.date).localeCompare(txt(b.date)))
+    .slice(0, 8)
+    .map((e) => ({
+      id: e.id,
+      title: txt(e.title),
+      date: formatDate(txt(e.date)),
+      location: txt(e.district),
+      category: txt(e.category),
+      organizer: e.ownerName,
+      image: txt(e.image),
+      registrationOpen: true,
+    }));
+}
+
 export function Events() {
+  const events = useUpcomingEvents();
+  // The logged-in school / organizer's own events that still wait for admin approval (not shown publicly yet).
+  const session = useSession();
+  const today = todayIso();
+  const myPending = useCollection('events').items.filter(
+    (e) => session && e.ownerId === session.id && e.status === 'pending' && txt(e.date) >= today,
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activePage, setActivePage] = useState(0);
   const totalPages = events.length;
@@ -141,6 +171,24 @@ export function Events() {
         </p>
       </div>
 
+      {myPending.length > 0 && (
+        <div className="container-page relative z-10 mt-6 max-w-3xl">
+          <div className="flex items-start gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-left ring-1 ring-amber-200">
+            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <p className="text-sm text-amber-900">
+              <b>Your event{myPending.length > 1 ? 's are' : ' is'} waiting for admin approval:</b>{' '}
+              {myPending.map((e) => `“${txt(e.title)}”`).join(', ')}. {myPending.length > 1 ? 'They appear' : 'It appears'} here as soon as the Padasala team approves.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {events.length === 0 && (
+        <p className="container-page relative z-10 mt-8 text-center text-sm font-semibold text-slate-500">
+          No upcoming events yet. <a href="#/events" className="text-[#0284c7]">Schools and organizers can post one here.</a>
+        </p>
+      )}
+
       {/* Cards Grid / Scrollable Container */}
       <div className="container-page relative z-10 mt-6 sm:mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
@@ -148,7 +196,7 @@ export function Events() {
           onScroll={syncActivePage}
           className="reveal-stagger rail [--rail-gutter:16px] md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
         >
-          {events.map((e, idx) => {
+          {events.map((e) => {
             const badge = categoryBadges[e.category] ?? {
               icon: Trophy,
               label: e.category,
@@ -169,12 +217,18 @@ export function Events() {
               >
                 {/* Image Container with Badges */}
                 <div className="relative h-44 sm:h-48 w-full rounded-[22px] sm:rounded-[24px] overflow-hidden bg-slate-100 shrink-0">
-                  <img
-                    src={e.image}
-                    alt={e.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+                  {e.image ? (
+                    <img
+                      src={e.image}
+                      alt={e.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 via-sky-50 to-violet-100">
+                      <CalendarDays className="h-12 w-12 text-sky-300" />
+                    </div>
+                  )}
                   {/* Subtle Gradient Shadow */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none" />
 
@@ -257,7 +311,7 @@ export function Events() {
         </div>
 
         {/* Carousel Navigation Controls & Pagination */}
-        <div className="mt-2 md:mt-10 flex items-center justify-center gap-4">
+        <div className={`mt-2 md:mt-10 ${totalPages > 1 ? 'flex' : 'hidden'} items-center justify-center gap-4`}>
           {/* Left Arrow Button */}
           <button
             type="button"

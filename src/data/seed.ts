@@ -140,6 +140,7 @@ export const seeds = {
   applications: [] as Seed[],
   questions: [] as Seed[],
   attempts: [] as Seed[],
+  favorites: [] as Seed[],
 };
 
 // Photo links used by earlier versions of the demo schools; saved copies with these get the new bundled photos.

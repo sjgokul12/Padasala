@@ -1,4 +1,4 @@
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Home, Building2, BookOpen, CalendarDays, type LucideIcon } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { AndroidIcon } from './ui';
 
@@ -12,13 +12,13 @@ export const coachingLinks = [
   { label: 'Courses (NEET & others)', desc: 'NEET, JEE & competitive exams', to: '/coaching/courses' },
 ];
 
-export const mainNav = [
-  { label: 'Home', to: '/' },
-  { label: 'Schools', to: '/schools' },
-  { label: 'Coaching', to: '/coaching', children: coachingLinks },
-  { label: 'Student', to: '/students' },
-  { label: 'Events', to: '/events' },
-  { label: 'About Us', to: '/about' },
+/** Main navigation — shown in the top navbar (desktop) and in the side drawer (every screen size). */
+export const mainNav: { label: string; to: string; icon: LucideIcon; children?: typeof coachingLinks }[] = [
+  { label: 'Home', to: '/', icon: Home },
+  { label: 'Schools', to: '/schools', icon: Building2 },
+  { label: 'Coaching', to: '/coaching', icon: BookOpen, children: coachingLinks },
+  { label: 'Student', to: '/students', icon: GraduationCap },
+  { label: 'Events', to: '/events', icon: CalendarDays },
 ];
 
 export const href = (to: string) => `#${to}`;
@@ -31,7 +31,7 @@ export function DownloadBadge({ compact }: { compact?: boolean }) {
       download="Padasala.apk"
       title="Download the Padasala Android app"
       className="group relative inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0b1f33] via-[#12304d] to-[#0b1f33] py-1.5 pl-1.5 pr-3 text-white shadow-[0_8px_20px_rgba(11,31,51,0.28)] ring-1 ring-white/10 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(11,31,51,0.35)]"
-    >
+    >    
       <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#3DDC84]/15 text-[#3DDC84]">
         <AndroidIcon className="h-[18px] w-[18px]" />
       </span>

@@ -1,8 +1,68 @@
-import { useEffect } from 'react';
-import { X, Briefcase, Truck, ChevronRight, LogIn, LogOut, UserPlus, LayoutDashboard, Database } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Briefcase, Truck, ChevronRight, ChevronDown, LogIn, LogOut, UserPlus, LayoutDashboard } from 'lucide-react';
 import { useRoute, isActive } from '@/lib/router';
 import { useSession, openLogin, logout, roles } from '@/lib/auth';
-import { Logo, DownloadBadge, href, showDownload } from './nav';
+import { Logo, DownloadBadge, href, showDownload, mainNav } from './nav';
+
+/** The same links as the top navbar; Coaching opens to show its three sections. */
+function DrawerNav() {
+  const { path } = useRoute();
+  const [coachingOpen, setCoachingOpen] = useState(() => isActive(path, '/coaching'));
+
+  return (
+    <nav aria-label="Main menu">
+      <div className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Menu</div>
+      <ul className="space-y-1">
+        {mainNav.map(({ label, to, icon: Icon, children }) => {
+          const active = isActive(path, to);
+          const row = `flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-[15px] font-semibold transition ${
+            active ? 'bg-sky-50 text-[#0284c7]' : 'text-slate-700 hover:bg-slate-50'
+          }`;
+          const icon = (
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${active ? 'bg-white text-[#0284c7] shadow-sm' : 'bg-slate-100 text-slate-500'}`}>
+              <Icon className="h-[18px] w-[18px]" />
+            </span>
+          );
+          if (!children) {
+            return (
+              <li key={to}>
+                <a href={href(to)} aria-current={active ? 'page' : undefined} className={row}>
+                  {icon}
+                  <span className="flex-1">{label}</span>
+                </a>
+              </li>
+            );
+          }
+          return (
+            <li key={to}>
+              <button type="button" onClick={() => setCoachingOpen((v) => !v)} aria-expanded={coachingOpen} className={row}>
+                {icon}
+                <span className="flex-1 text-left">{label}</span>
+                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${coachingOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {coachingOpen && (
+                <ul className="ml-[30px] mt-1 space-y-0.5 border-l-2 border-sky-100 pl-4">
+                  {children.map((c) => (
+                    <li key={c.to}>
+                      <a
+                        href={href(c.to)}
+                        aria-current={path === c.to ? 'page' : undefined}
+                        className={`block rounded-xl px-3 py-2 ${path === c.to ? 'bg-sky-50' : 'hover:bg-slate-50'}`}
+                      >
+                        <span className={`block text-sm font-semibold ${path === c.to ? 'text-[#0284c7]' : 'text-slate-700'}`}>{c.label}</span>
+                        <span className="block text-xs text-slate-500">{c.desc}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
 
 const postingLinks = [
   { label: 'Teacher Job Posting', desc: 'Teachers post job requirements · school vacancies', to: '/teachers', icon: Briefcase, tone: 'from-[#009bf8] to-[#0062f5]' },
@@ -73,6 +133,8 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
           )}
 
+          <DrawerNav />
+
           {/* Posting portals */}
           <div>
             <div className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Post & find</div>
@@ -93,18 +155,6 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </a>
               ))}
-              {session?.role === 'admin' && (
-                <a href={href('/admin')} className="flex items-center gap-3 rounded-3xl p-3.5 ring-1 ring-slate-100 bg-white shadow-sm hover:ring-sky-200">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md">
-                    <Database className="h-5 w-5" />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block font-display font-bold text-[#0b1f33]">Question Bank</span>
-                    <span className="block text-xs text-slate-500">Upload NEET questions & papers</span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </a>
-              )}
             </div>
           </div>
 

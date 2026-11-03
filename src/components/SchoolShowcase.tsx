@@ -5,15 +5,16 @@ import {
 } from 'lucide-react';
 import heroImg from '@/assets/school-hero.webp';
 import heroMobileImg from '@/assets/school-hero-mobile.webp';
-import { useSession } from '@/lib/auth';
+import { useSession, openLogin } from '@/lib/auth';
+import { backendEnabled } from '@/lib/api';
 import { useCollection, useStored, txt, type Post } from '@/lib/store';
 import { Modal, DynamicForm, Chip } from './ui';
-import { SchoolPostCard, JobCard, EventCard } from './listings';
+import { SchoolPostCard, JobCard, EventCard, isPublished } from './listings';
 
 /* ---------- Banner with search ---------- */
 
-const highlights = [
-  { icon: Building2, title: '10,000+', text: 'Schools Listed' },
+const highlights = (schoolCount: number) => [
+  { icon: Building2, title: schoolCount.toLocaleString('en-IN'), text: 'Schools Listed' },
   { icon: Award, title: 'Multiple', text: 'Boards & Curriculums' },
   { icon: Zap, title: 'Direct', text: 'Admission Apply' },
   { icon: ShieldCheck, title: 'Verified', text: 'School Profiles' },
@@ -31,6 +32,7 @@ export function SchoolHero({
   top?: boolean;
   as?: 'h1' | 'h2';
 }) {
+  const schoolCount = useCollection('schoolProfiles').items.length;
   const ViewAll = ({ className }: { className: string }) =>
     viewAllHref ? (
       <a href={viewAllHref} className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#0062f5] to-[#009bf8] font-bold text-white shadow-[0_14px_30px_-10px_rgba(0,98,245,0.7)] ring-4 ring-white/70 transition hover:-translate-y-0.5 ${className}`}>
@@ -89,7 +91,7 @@ export function SchoolHero({
           </form>
 
           <div className="mt-4 sm:mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
-            {highlights.map(({ icon: Icon, title, text }) => (
+            {highlights(schoolCount).map(({ icon: Icon, title, text }) => (
               <div key={text} className="flex items-center gap-2.5 rounded-2xl bg-white/80 px-3 py-2.5 shadow-sm ring-1 ring-white backdrop-blur">
                 <Icon className="h-6 w-6 shrink-0 text-[#0284c7]" strokeWidth={1.8} />
                 <div className="min-w-0 leading-tight">
@@ -110,7 +112,25 @@ export function SchoolHero({
 /* ---------- Saved schools (heart) ---------- */
 
 export function useFavorites() {
+  // Backend: saved per account in the database (login needed). Demo mode: saved on this device.
+  // backendEnabled never changes while the app runs, so the same hooks are always called.
+  /* eslint-disable react-hooks/rules-of-hooks */
+  if (backendEnabled) {
+    const session = useSession();
+    const store = useCollection('favorites');
+    const favs = store.items.map((f) => String(f.schoolId));
+    return {
+      favs,
+      isFav: (id: string) => favs.includes(id),
+      toggle: (id: string) => {
+        if (!session) return openLogin('student');
+        const existing = store.items.find((f) => String(f.schoolId) === id);
+        (existing ? store.remove(existing.id) : store.add({ schoolId: Number(id) }, session)).catch((e: Error) => window.alert(e.message));
+      },
+    };
+  }
   const [favs, setFavs] = useStored<string[]>('favorites', []);
+  /* eslint-enable react-hooks/rules-of-hooks */
   return {
     favs,
     isFav: (id: string) => favs.includes(id),
@@ -236,9 +256,9 @@ function EnrollForm({ school, onDone }: { school: Post; onDone: () => void }) {
           { name: 'classLevel', label: 'Class applying for', type: 'select', required: true, options: ['Pre-KG', 'LKG', 'UKG', ...Array.from({ length: 12 }, (_, i) => `Class ${i + 1}`)] },
           { name: 'message', label: 'Message (optional)', type: 'textarea', placeholder: 'Questions about fees, transport, hostel…' },
         ]}
-        onSubmit={(v) => {
-          enquiries.add(
-            { to: school.ownerId, toName: txt(school.name), about: `Admission enquiry — ${txt(v.classLevel)}`, message: txt(v.message) || 'Interested in admission.', phone: v.phone, fromRole: session?.role ?? 'guest' },
+        onSubmit={async (v) => {
+          await enquiries.add(
+            { to: school.ownerId, toName: txt(school.name), about: `Admission enquiry — ${txt(v.classLevel)}`, message: txt(v.message) || 'Interested in admission.', phone: v.phone, fromName: txt(v.studentName), fromRole: session?.role ?? 'guest' },
             { id: session?.id ?? 'guest', name: session?.name ?? txt(v.studentName) },
           );
           window.setTimeout(onDone, 1200);
@@ -251,7 +271,7 @@ function EnrollForm({ school, onDone }: { school: Post; onDone: () => void }) {
 export function SchoolProfileView({ school, onEnroll }: { school: Post; onEnroll?: () => void }) {
   const posts = useCollection('schoolPosts').items.filter((p) => p.ownerId === school.ownerId);
   const jobs = useCollection('jobs').items.filter((p) => p.ownerId === school.ownerId);
-  const events = useCollection('events').items.filter((p) => p.ownerId === school.ownerId);
+  const events = useCollection('events').items.filter((p) => p.ownerId === school.ownerId && isPublished(p));
   const amenities = (school.amenities as string[] | undefined) ?? [];
   const features = (school.features as string[] | undefined) ?? [];
   const courses = (school.courses as string[] | undefined) ?? [];

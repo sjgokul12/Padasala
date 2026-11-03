@@ -5,6 +5,47 @@ import {
 } from 'lucide-react';
 import type { Question, Subject } from '@/data/questions';
 import { subjects as subjectOrder } from '@/data/questions';
+import { api, backendEnabled } from '@/lib/api';
+import { getToken, useSession, openLogin } from '@/lib/auth';
+
+/** "Explain with AI" under a reviewed question: a step-by-step solution from the server (written once by Claude, then reused). */
+function AiExplanation({ question }: { question: Question }) {
+  const session = useSession();
+  const [text, setText] = useState(question.aiExplanation ?? '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const ask = async () => {
+    if (!session) return openLogin('student');
+    setBusy(true);
+    setError('');
+    try {
+      const r = await api<{ explanation: string }>('/api/ai/explain.php', { method: 'POST', body: { questionId: question.id }, token: getToken() });
+      setText(r.explanation);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not get an explanation. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (text) {
+    return (
+      <div className="mt-2 rounded-2xl bg-violet-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-violet-100">
+        <span className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-violet-700"><Sparkles className="h-3.5 w-3.5" /> AI explanation</span>
+        <p className="whitespace-pre-line">{text}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2">
+      <button type="button" onClick={ask} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3.5 py-2 text-xs font-bold text-violet-700 ring-1 ring-violet-100 hover:bg-violet-100 disabled:opacity-70">
+        <Sparkles className="h-3.5 w-3.5" /> {busy ? 'Explaining…' : 'Explain with AI'}
+      </button>
+      {error && <p className="mt-1.5 text-xs font-semibold text-rose-600">{error}</p>}
+    </div>
+  );
+}
 
 export const MARKS = { correct: 4, wrong: -1 };
 export const SECONDS_PER_QUESTION = 60;
@@ -366,6 +407,7 @@ function Result({ title, paper, answers, result, onClose, onRetake }: {
                   <span className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#0284c7]"><Sparkles className="h-3.5 w-3.5" /> Solution</span>
                   {q.explanation}
                 </div>
+                {backendEnabled && <AiExplanation question={q} />}
               </div>
             ))}
             {shown.length === 0 && <p className="text-center text-sm text-slate-500">Nothing here — great job!</p>}

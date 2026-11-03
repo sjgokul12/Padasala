@@ -34,7 +34,12 @@ export function VendorsPage() {
           ]}
         />
         <div className="mt-6">
-          {tab === 'requirements' && <Requirements />}
+          {tab === 'requirements' && (
+            // School content is open to every logged-in user (see access.ts), but this tab needs a login.
+            <RequireRole allow={viewersOf('school')} loginOptions={['vendor', 'school']} reason="Login to see school requirements">
+              <Requirements />
+            </RequireRole>
+          )}
           {tab === 'post' && (
             <RequireRole allow={['vendor']} reason="Login as a vendor to post your company details">
               <PostVendor />

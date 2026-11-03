@@ -5,9 +5,11 @@ import {
 } from 'lucide-react';
 import { useSession, register, logout, openLogin, roles } from '@/lib/auth';
 import { useCollection, txt, type Post } from '@/lib/store';
+import { backendEnabled } from '@/lib/api';
 import { useQuestionBank } from '@/lib/questionBank';
 import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, Chip, Modal } from '@/components/ui';
 import { TuitionRequestCard, MyPosts } from '@/components/listings';
+import { verifyWithOtp } from '@/components/OtpDialog';
 import { MockTest, buildPaper, SECONDS_PER_QUESTION, type AttemptResult } from '@/components/MockTest';
 import { tuitionRequestFields, studentProfileFields } from '@/data/forms';
 import type { Question, Subject } from '@/data/questions';
@@ -28,6 +30,7 @@ export function StudentsPage() {
   const profile = session ? profiles.items.find((p) => p.ownerId === session.id) : undefined;
 
   // Step 1: create a student account (or complete the profile). Student profiles are private (see access.ts).
+  if (session?.role === 'student' && !profiles.loaded) return <section className="min-h-[60vh] pt-28 text-center text-sm text-slate-500">Loading your profile…</section>;
   if (session?.role !== 'student' || !profile) return <StudentOnboarding />;
 
   return (
@@ -91,16 +94,18 @@ function StudentOnboarding() {
         ) : (
           <Card className="reveal mt-6 p-5 sm:p-8">
             <DynamicForm
-              submitLabel={completing ? 'Save profile' : 'Create student account'}
+              submitLabel={completing ? 'Save profile' : 'Verify mobile & create account'}
               initial={completing ? { name: session.name } : undefined}
               fields={completing ? studentProfileFields : [...studentProfileFields, { name: 'password', label: 'Create password', type: 'password', required: true }]}
-              onSubmit={(values) => {
-                const { password: _unused, ...v } = values; // the password is not stored until a backend exists
-                void _unused;
-                const s = completing
-                  ? session
-                  : register({ role: 'student', name: txt(v.name), phone: txt(v.phone), email: txt(v.email), district: txt(v.district) });
-                profiles.add(v, s);
+              onSubmit={async (values) => {
+                const { password, ...v } = values; // the password goes only to the login system, never into the profile
+                let s = completing ? session : null;
+                if (!s) {
+                  // Verify the mobile number with an OTP, then create the account.
+                  const data = { role: 'student' as const, name: txt(v.name), phone: txt(v.phone), password: txt(password), email: txt(v.email), district: txt(v.district) };
+                  await verifyWithOtp({ purpose: 'register', role: 'student', phone: data.phone, action: async (otp) => { s = await register({ ...data, otp }); } });
+                }
+                await profiles.add(v, s!);
                 window.scrollTo({ top: 0, behavior: 'smooth' }); // the new profile card appears at the top
               }}
             />
@@ -177,7 +182,7 @@ function StudentProfileCard({ profile }: { profile: Post }) {
           initial={profile}
           reset={false}
           submitLabel="Save profile"
-          onSubmit={(v) => { profiles.update(profile.id, v); window.setTimeout(() => setEditing(false), 700); }}
+          onSubmit={async (v) => { await profiles.update(profile.id, v); window.setTimeout(() => setEditing(false), 700); }}
         />
       </Modal>
     </section>
@@ -209,7 +214,11 @@ function Tests() {
 
   const save = (r: AttemptResult) => {
     if (!running) return;
-    attempts.add({ title: running.title, mode: running.mode, ...r, perSubject: JSON.stringify(r.perSubject) }, session ?? { id: 'guest', name: 'Guest' });
+    // Results are saved for logged-in students (guests can still take the test).
+    if (backendEnabled && !session) return;
+    attempts
+      .add({ title: running.title, mode: running.mode, ...r, perSubject: JSON.stringify(r.perSubject) }, session ?? { id: 'guest', name: 'Guest' })
+      .catch(() => undefined);
   };
 
   const practice = bank.filter((q) => q.source === 'practice');

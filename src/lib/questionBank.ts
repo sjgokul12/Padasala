@@ -1,7 +1,11 @@
 import { useCollection, txt } from './store';
+import { backendEnabled } from './api';
 import { sampleQuestions, type Question, type Subject } from '@/data/questions';
 
-/** Built-in practice questions plus everything uploaded from the admin Question Bank. */
+/**
+ * Questions for mock tests. With the backend connected they all come from the database question bank;
+ * in demo mode the built-in practice questions are added to the ones uploaded on this device.
+ */
 export function useQuestionBank(): Question[] {
   const { items } = useCollection('questions');
   const uploaded: Question[] = items.map((p) => ({
@@ -12,6 +16,7 @@ export function useQuestionBank(): Question[] {
     answer: Number(p.answer),
     explanation: txt(p.explanation),
     source: txt(p.source) || 'practice',
+    aiExplanation: p.aiExplanation ? txt(p.aiExplanation) : undefined,
   }));
-  return [...uploaded, ...sampleQuestions];
+  return backendEnabled ? uploaded : [...uploaded, ...sampleQuestions];
 }

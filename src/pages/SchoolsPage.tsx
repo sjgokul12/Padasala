@@ -11,7 +11,7 @@ import {
   EnquiryButton, EnquiryInbox, type FieldDef,
 } from '@/components/ui';
 import {
-  SchoolPostCard, JobCard, EventCard, RequirementCard, TeacherCard, VendorCard, MyPosts, grid,
+  SchoolPostCard, JobCard, EventCard, RequirementCard, TeacherCard, VendorCard, MyPosts, StatusBadge, grid,
 } from '@/components/listings';
 import { SchoolHero, SchoolGrid, useFavorites } from '@/components/SchoolShowcase';
 import { districts } from '@/data/districts';
@@ -201,14 +201,31 @@ function useMyProfile() {
   const session = useSession()!;
   const profiles = useCollection('schoolProfiles');
   const mine = profiles.items.find((p) => p.ownerId === session.id);
-  const save = (patch: Record<string, string | string[] | number | boolean | undefined>) =>
-    mine ? profiles.update(mine.id, patch) : profiles.add({ name: session.name, ...patch }, session);
-  return { mine, save, session };
+  const save = async (patch: Record<string, string | string[] | number | boolean | undefined>) => {
+    if (mine) await profiles.update(mine.id, patch);
+    else await profiles.add({ name: session.name, ...patch }, session);
+  };
+  // Quick changes (amenity ticks, features) outside a form: report problems in a popup.
+  const quickSave = (patch: Record<string, string[]>) => {
+    if (!mine) return window.alert('Please save your school profile first (Profile section).');
+    save(patch).catch((e: Error) => window.alert(e.message));
+  };
+  return { mine, save, quickSave, session };
 }
 
 const postForms: Partial<Record<SectionId, { fields: FieldDef[]; collection: 'jobs' | 'events' | 'requirements' | 'schoolPosts'; kind?: string; help: string; render: (p: Post) => JSX.Element }>> = {
   job: { fields: jobFields, collection: 'jobs', help: 'Vacancies appear on the Teacher Job Posting page for teachers to see.', render: (p) => <JobCard post={p} /> },
-  event: { fields: eventFields, collection: 'events', help: 'Events appear on the Events page, sorted by date and filterable by district. Students can ask for the invitation on WhatsApp.', render: (p) => <EventCard post={p} /> },
+  event: {
+    fields: eventFields,
+    collection: 'events',
+    help: 'Events appear on the home screen and the Events page once the Padasala team approves them (you will see “Waiting for admin approval” below until then). Students can ask for the invitation on WhatsApp.',
+    render: (p) => (
+      <div>
+        {p.status && p.status !== 'approved' && <div className="mb-2"><StatusBadge post={p} /></div>}
+        <EventCard post={p} />
+      </div>
+    ),
+  },
   requirement: { fields: requirementFields, collection: 'requirements', help: 'Need bags, ties, notebooks, computers or software? Registered vendors see this and can send you quotations.', render: (p) => <RequirementCard post={p} /> },
   achievement: { fields: achievementFields, collection: 'schoolPosts', kind: 'achievement', help: 'Share results, medals and milestones with parents.', render: (p) => <SchoolPostCard post={p} /> },
   admission: { fields: admissionFields, collection: 'schoolPosts', kind: 'admission', help: 'Announce admissions — Vijayadasami, new academic year or any occasion.', render: (p) => <SchoolPostCard post={p} /> },
@@ -275,7 +292,7 @@ function ProfileSection() {
 }
 
 function AmenitiesSection() {
-  const { mine, save } = useMyProfile();
+  const { mine, quickSave: save } = useMyProfile();
   const selected = (mine?.amenities as string[] | undefined) ?? [];
   const [custom, setCustom] = useState('');
   const toggle = (a: string) => save({ amenities: selected.includes(a) ? selected.filter((x) => x !== a) : [...selected, a] });
@@ -304,7 +321,7 @@ function AmenitiesSection() {
 }
 
 function FeaturesSection() {
-  const { mine, save } = useMyProfile();
+  const { mine, quickSave: save } = useMyProfile();
   const features = (mine?.features as string[] | undefined) ?? [];
   const [text, setText] = useState('');
 

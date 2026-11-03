@@ -12,6 +12,8 @@ export interface Question {
   explanation: string;
   /** 'practice' or a previous-year paper label such as 'NEET 2024'. */
   source: string;
+  /** Step-by-step solution written by AI earlier (backend only). */
+  aiExplanation?: string;
 }
 
 // Starter practice bank. The Padasala team adds more (and previous-year papers) from the admin Question Bank page.

@@ -34,6 +34,11 @@ export function viewersOf(kind: ContentKind): Role[] {
   return v === EVERYONE ? ['student', 'school', 'coaching', 'teacher', 'vendor', 'organizer', 'admin'] : [...v, 'admin'];
 }
 
+/** Only the logged-in account that posted something can edit or delete it. */
+export function canManage(post: { ownerId: string }, session: { id: string; role: Role } | null): boolean {
+  return !!session && session.id === post.ownerId;
+}
+
 export function canSee(kind: ContentKind, role: Role | undefined, isOwner = false): boolean {
   if (isOwner) return true;
   const v = viewers[kind];

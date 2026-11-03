@@ -1,7 +1,11 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { X, Lock, CheckCircle2, Inbox, Send, ImagePlus, type LucideIcon } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  X, Lock, CheckCircle2, Inbox, Send, ImagePlus, Paperclip, FileText,
+  FileSpreadsheet, File, Download, Eye, UploadCloud, type LucideIcon,
+} from 'lucide-react';
 import { useSession, openLogin, roles, type Role } from '@/lib/auth';
 import { useCollection, type Value } from '@/lib/store';
+import { ApiError } from '@/lib/api';
 
 /* ---------- Page banner ---------- */
 
@@ -73,7 +77,15 @@ export function Tabs<T extends string>({ tabs, active, onChange }: { tabs: TabDe
 
 /* ---------- Modal (bottom sheet on phones) ---------- */
 
-export function Modal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; wide?: boolean }) {
+export function Modal({ open, onClose, title, children, wide, top }: {
+  open: boolean;
+  onClose: () => void;
+  title: ReactNode;
+  children: ReactNode;
+  wide?: boolean;
+  /** Show above another open dialog (e.g. the OTP step on top of the login dialog). */
+  top?: boolean;
+}) {
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -85,14 +97,23 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
       window.removeEventListener('keydown', onKey);
     };
   }, [open, onClose]);
+  const pressedOnBackdrop = useRef(false);
 
   if (!open) return null;
+  // Close only on a real click on the dark background: the press AND the release must both happen there.
+  // (Pressing inside a field — e.g. selecting typed text — and releasing outside must not close the form.)
   return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-slate-900/45 backdrop-blur-sm sm:p-4" onClick={onClose}>
+    <div
+      className={`fixed inset-0 ${top ? 'z-[90]' : 'z-[80]'} flex items-end sm:items-center justify-center bg-slate-900/45 backdrop-blur-sm sm:p-4`}
+      onPointerDown={(e) => { pressedOnBackdrop.current = e.target === e.currentTarget; }}
+      onClick={(e) => {
+        if (pressedOnBackdrop.current && e.target === e.currentTarget) onClose();
+        pressedOnBackdrop.current = false;
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
         className={`w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto rounded-t-[28px] sm:rounded-[28px] bg-white shadow-2xl animate-fadeUp pb-[env(safe-area-inset-bottom)]`}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-white/95 backdrop-blur px-5 sm:px-6 pt-5 pb-3 border-b border-slate-100">
@@ -112,38 +133,84 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
 export interface FieldDef {
   name: string;
   label: string;
-  type?: 'text' | 'textarea' | 'select' | 'date' | 'time' | 'number' | 'tel' | 'email' | 'url' | 'password' | 'multi' | 'image';
+  type?: 'text' | 'textarea' | 'select' | 'date' | 'time' | 'number' | 'tel' | 'email' | 'url' | 'password' | 'multi' | 'image' | 'file';
   options?: string[];
   required?: boolean;
   placeholder?: string;
   /** Span both columns on wider screens. */
   full?: boolean;
+  /** Number fields: allowed range (same as the server's rule). */
+  min?: number;
+  max?: number;
+  /** Small help text under the field. */
+  hint?: string;
+  /** Accepted file extensions or mime types for 'file' type, e.g. '.pdf,.doc,.docx,.xls,.xlsx,.csv,image/*' */
+  accept?: string;
 }
+
+/** "(optional)" is added to the label of fields that are not required, unless the label already says so. */
+const optionalTag = (f: FieldDef) => !f.required && f.type !== 'image' && f.type !== 'file' && !/optional/i.test(f.label);
 
 export type FormValues = Record<string, Value>;
 
 export function DynamicForm({
   fields, initial, submitLabel = 'Post', onSubmit, reset = true,
-}: { fields: FieldDef[]; initial?: FormValues; submitLabel?: string; onSubmit: (v: FormValues) => void; reset?: boolean }) {
+}: {
+  fields: FieldDef[];
+  initial?: FormValues;
+  submitLabel?: string;
+  /** May be async (e.g. a server call); a thrown Error's message is shown under the form. */
+  onSubmit: (v: FormValues) => unknown;
+  reset?: boolean;
+}) {
   const blank = () => Object.fromEntries(fields.map((f) => [f.name, initial?.[f.name] ?? (f.type === 'multi' ? [] : '')]));
   const [values, setValues] = useState<FormValues>(blank);
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Server messages for individual fields, shown in red under that field.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const set = (name: string, v: Value) => setValues((s) => ({ ...s, [name]: v }));
+  const set = (name: string, v: Value) => {
+    setValues((s) => ({ ...s, [name]: v }));
+    setFieldErrors((fe) => {
+      if (!fe[name]) return fe;
+      const { [name]: _gone, ...rest } = fe;
+      void _gone;
+      return rest;
+    });
+  };
 
   return (
     <form
       className="grid sm:grid-cols-2 gap-4"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
+        if (busy) return;
         const missing = fields.find((f) => f.required && f.type === 'multi' && !(values[f.name] as string[]).length);
         if (missing) {
           setError(`Please choose at least one option for “${missing.label}”.`);
           return;
         }
         setError('');
-        onSubmit(values);
+        setFieldErrors({});
+        setBusy(true);
+        try {
+          await onSubmit(values);
+        } catch (err) {
+          const perField = err instanceof ApiError ? err.fields : {};
+          const named = fields.filter((f) => perField[f.name]);
+          if (named.length) {
+            setFieldErrors(perField);
+            setError(`Please check: ${named.map((f) => f.label).join(', ')}.`);
+            document.getElementById(`f-${named[0].name}`)?.focus();
+          } else {
+            setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+          }
+          return;
+        } finally {
+          setBusy(false);
+        }
         if (reset) setValues(blank());
         setDone(true);
         window.setTimeout(() => setDone(false), 3000);
@@ -151,15 +218,41 @@ export function DynamicForm({
     >
       {fields.map((f) => {
         const id = `f-${f.name}`;
-        const span = f.full || f.type === 'textarea' || f.type === 'multi' || f.type === 'image' ? 'sm:col-span-2' : '';
+        const span = f.full || f.type === 'textarea' || f.type === 'multi' || f.type === 'image' || f.type === 'file' ? 'sm:col-span-2' : '';
         const value = values[f.name];
         return (
           <div key={f.name} className={span}>
             <label className="label" htmlFor={id}>
               {f.label} {f.required && <span className="text-rose-500">*</span>}
+              {optionalTag(f) && <span className="font-normal text-slate-400"> (optional)</span>}
             </label>
             {f.type === 'image' ? (
               <ImageUpload id={id} value={String(value ?? '')} onChange={(v) => set(f.name, v)} />
+            ) : f.type === 'file' ? (
+              <FileUpload
+                id={id}
+                value={typeof value === 'string' ? value : undefined}
+                fileName={typeof values[`${f.name}Name`] === 'string' ? (values[`${f.name}Name`] as string) : undefined}
+                accept={f.accept}
+                onChange={(fileData) => {
+                  if (fileData) {
+                    setValues((s) => ({
+                      ...s,
+                      [f.name]: fileData.url,
+                      [`${f.name}Name`]: fileData.name,
+                      [`${f.name}Size`]: fileData.size,
+                    }));
+                  } else {
+                    setValues((s) => {
+                      const copy = { ...s };
+                      delete copy[f.name];
+                      delete copy[`${f.name}Name`];
+                      delete copy[`${f.name}Size`];
+                      return copy;
+                    });
+                  }
+                }}
+              />
             ) : f.type === 'textarea' ? (
               <textarea id={id} rows={3} required={f.required} placeholder={f.placeholder} className="input resize-none" value={String(value)} onChange={(e) => set(f.name, e.target.value)} />
             ) : f.type === 'select' ? (
@@ -187,23 +280,34 @@ export function DynamicForm({
             ) : (
               <input
                 id={id}
-                type={f.type ?? 'text'}
+                // Links: plain text so "www.school.com" is accepted (the server adds https://).
+                type={f.type === 'url' ? 'text' : f.type ?? 'text'}
                 required={f.required}
                 placeholder={f.placeholder}
-                inputMode={f.type === 'tel' ? 'numeric' : undefined}
+                inputMode={f.type === 'tel' || f.type === 'number' ? 'numeric' : f.type === 'url' ? 'url' : undefined}
                 pattern={f.type === 'tel' ? '[0-9 +]{10,14}' : undefined}
-                className="input"
-                value={String(value)}
+                min={f.type === 'number' ? f.min : undefined}
+                max={f.type === 'number' ? f.max : undefined}
+                step={f.type === 'number' ? 1 : undefined}
+                autoCapitalize={f.type === 'url' || f.type === 'email' ? 'none' : undefined}
+                aria-invalid={fieldErrors[f.name] ? true : undefined}
+                className={`input ${fieldErrors[f.name] ? 'ring-2 ring-rose-300 border-rose-300' : ''}`}
+                value={String(value ?? '')}
                 onChange={(e) => set(f.name, e.target.value)}
               />
             )}
+            {fieldErrors[f.name] ? (
+              <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors[f.name]}</p>
+            ) : f.hint ? (
+              <p className="mt-1 text-xs text-slate-500">{f.hint}</p>
+            ) : null}
           </div>
         );
       })}
       {error && <p className="sm:col-span-2 text-sm font-semibold text-rose-600">{error}</p>}
       <div className="sm:col-span-2 flex flex-wrap items-center gap-3 pt-1">
-        <button type="submit" className="btn-primary px-6 w-full sm:w-auto">
-          <Send className="h-4 w-4" /> {submitLabel}
+        <button type="submit" disabled={busy} className="btn-primary px-6 w-full sm:w-auto disabled:opacity-70">
+          <Send className="h-4 w-4" /> {busy ? 'Please wait…' : submitLabel}
         </button>
         {done && (
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
@@ -303,6 +407,217 @@ export function ImageUpload({ id, value, onChange, round }: { id: string; value:
   );
 }
 
+/* ---------- Document & File upload (PDF, Word, Excel, Images, all types) ---------- */
+
+export interface PickedFile {
+  url: string;
+  name: string;
+  size: number;
+}
+
+export function formatBytes(bytes?: number): string {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function getFileCategory(nameOrUrl: string): {
+  category: 'pdf' | 'excel' | 'word' | 'image' | 'other';
+  label: string;
+  color: string;
+  bg: string;
+  ring: string;
+  Icon: typeof FileText;
+} {
+  const clean = (nameOrUrl || '').split('?')[0].toLowerCase();
+  const ext = clean.split('.').pop() || '';
+  if (ext === 'pdf' || clean.includes('application/pdf')) {
+    return { category: 'pdf', label: 'PDF', color: 'text-rose-600', bg: 'bg-rose-50', ring: 'ring-rose-200', Icon: FileText };
+  }
+  if (['xls', 'xlsx', 'csv'].includes(ext) || clean.includes('spreadsheet') || clean.includes('excel')) {
+    return { category: 'excel', label: ext.toUpperCase() || 'EXCEL', color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-200', Icon: FileSpreadsheet };
+  }
+  if (['doc', 'docx'].includes(ext) || clean.includes('word') || clean.includes('msword')) {
+    return { category: 'word', label: ext.toUpperCase() || 'DOC', color: 'text-[#0284c7]', bg: 'bg-sky-50', ring: 'ring-sky-200', Icon: FileText };
+  }
+  if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext) || clean.startsWith('data:image/')) {
+    return { category: 'image', label: ext.toUpperCase() || 'IMAGE', color: 'text-violet-600', bg: 'bg-violet-50', ring: 'ring-violet-200', Icon: ImagePlus };
+  }
+  return { category: 'other', label: ext ? ext.toUpperCase() : 'DOC', color: 'text-slate-600', bg: 'bg-slate-50', ring: 'ring-slate-200', Icon: File };
+}
+
+export function FileUpload({
+  id,
+  value,
+  fileName,
+  onChange,
+  accept = '.pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,image/*',
+}: {
+  id: string;
+  value?: string;
+  fileName?: string;
+  onChange: (file: PickedFile | null) => void;
+  accept?: string;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+
+  const pick = (file?: File) => {
+    if (!file) return;
+    setError('');
+    // 15 MB limit
+    if (file.size > 15 * 1024 * 1024) {
+      setError('That file is larger than 15 MB. Please choose a smaller one.');
+      return;
+    }
+    setBusy(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setBusy(false);
+      onChange({
+        url: reader.result as string,
+        name: file.name,
+        size: file.size,
+      });
+    };
+    reader.onerror = () => {
+      setBusy(false);
+      setError('Could not read this file. Please try again.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const displayName = fileName || (value && !value.startsWith('data:') ? value.split('/').pop()?.split('?')[0] : '') || 'Attached document';
+  const meta = getFileCategory(displayName || value || '');
+
+  const fileInput = (
+    <input
+      id={id}
+      type="file"
+      accept={accept}
+      className="sr-only"
+      onChange={(e) => {
+        pick(e.target.files?.[0]);
+        e.target.value = '';
+      }}
+    />
+  );
+
+  return (
+    <div>
+      {value ? (
+        <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-bold ring-1 ${meta.bg} ${meta.ring} ${meta.color}`}>
+              <meta.Icon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#0b1f33] truncate" title={displayName}>
+                {displayName}
+              </p>
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                <span className={`font-extrabold text-[10px] uppercase px-1.5 py-0.5 rounded ${meta.bg} ${meta.color} ring-1 ${meta.ring}`}>
+                  {meta.label}
+                </span>
+                <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold text-[11px]">
+                  <CheckCircle2 className="h-3 w-3" /> Attached
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <label htmlFor={id} className="cursor-pointer rounded-full bg-sky-50 px-3 py-1.5 text-xs font-bold text-[#0284c7] ring-1 ring-sky-100 transition hover:bg-sky-100">
+              {busy ? '…' : 'Change'}
+            </label>
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              aria-label="Remove attached file"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-50 text-rose-500 ring-1 ring-rose-100 transition hover:bg-rose-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          {fileInput}
+        </div>
+      ) : (
+        <label
+          htmlFor={id}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            pick(e.dataTransfer.files?.[0]);
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-5 text-center transition ${
+            dragOver ? 'border-[#0284c7] bg-sky-50' : 'border-sky-200 bg-sky-50/40 hover:border-sky-300 hover:bg-sky-50'
+          }`}
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#0284c7] shadow-sm ring-1 ring-sky-100">
+            <UploadCloud className="h-5 w-5" />
+          </span>
+          <div>
+            <span className="text-sm font-bold text-[#0284c7]">
+              {busy ? 'Reading document…' : 'Upload document, quotation or catalogue'}
+            </span>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Supports PDF, Word (.doc, .docx), Excel (.xls, .xlsx, .csv), Images (up to 15 MB)
+            </p>
+          </div>
+          {fileInput}
+        </label>
+      )}
+      {error && <p className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}
+    </div>
+  );
+}
+
+/* ---------- Attachment badge (display & download) ---------- */
+
+export function AttachmentBadge({
+  url,
+  name,
+  label,
+}: {
+  url?: string;
+  name?: string;
+  label?: string;
+}) {
+  if (!url) return null;
+  const fileName = name || (url.startsWith('data:') ? 'document' : url.split('/').pop()?.split('?')[0]) || 'Attachment';
+  const meta = getFileCategory(fileName || url);
+  const isDirectlyViewable = meta.category === 'pdf' || meta.category === 'image';
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <a
+        href={url}
+        download={fileName}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold ring-1 transition shadow-sm ${meta.bg} ${meta.color} ${meta.ring} hover:opacity-90`}
+      >
+        <meta.Icon className="h-4 w-4 shrink-0" />
+        <span className="max-w-[200px] truncate sm:max-w-[320px]">{label || fileName}</span>
+        <Download className="h-3.5 w-3.5 opacity-70 ml-0.5" />
+      </a>
+      {isDirectlyViewable && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50"
+        >
+          <Eye className="h-3.5 w-3.5 text-[#0284c7]" /> View
+        </a>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Small pieces ---------- */
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -332,11 +647,17 @@ export function EmptyState({ title, text }: { title: string; text?: string }) {
 }
 
 /** Renders children only for the allowed roles; otherwise a prompt to log in with the right category. */
-export function RequireRole({ allow, children, reason }: { allow: Role[]; children: ReactNode; reason: string }) {
+export function RequireRole({ allow, children, reason, loginOptions }: {
+  allow: Role[];
+  children: ReactNode;
+  reason: string;
+  /** Login buttons to offer; defaults to every allowed role. */
+  loginOptions?: Role[];
+}) {
   const session = useSession();
   if (session && allow.includes(session.role)) return <>{children}</>;
   // The admin login is never advertised to visitors.
-  const loginAs = allow.filter((r) => r !== 'admin');
+  const loginAs = (loginOptions ?? allow).filter((r) => r !== 'admin');
   return (
     <div className="rounded-3xl bg-gradient-to-br from-sky-50 to-white ring-1 ring-sky-100 px-5 py-8 sm:p-10 text-center">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0284c7] shadow-sm ring-1 ring-sky-100">
@@ -401,9 +722,16 @@ export function EnquiryButton({ to, toName, about, label = 'Send Enquiry' }: { t
           fields={[
             { name: 'message', label: 'Message', type: 'textarea', required: true, placeholder: 'Describe what you need, quantity, timeline…' },
             { name: 'phone', label: 'Your contact number', type: 'tel', required: true },
+            {
+              name: 'attachment',
+              label: 'Attach document / quotation / brochure',
+              type: 'file',
+              full: true,
+              hint: 'Upload quotation, proposal, catalogue, or document (PDF, Word, Excel, Images up to 15 MB)',
+            },
           ]}
-          onSubmit={(v) => {
-            enquiries.add({ ...v, to, toName, about, fromRole: session.role }, session);
+          onSubmit={async (v) => {
+            await enquiries.add({ ...v, to, toName, about, fromRole: session.role }, session);
             window.setTimeout(() => setOpen(false), 900);
           }}
         />
@@ -432,8 +760,17 @@ export function EnquiryInbox({ title = 'Enquiries received' }: { title?: string 
                 <Chip tone="slate">{new Date(e.createdAt).toLocaleDateString('en-IN')}</Chip>
               </div>
               <p className="mt-1 text-xs font-semibold text-slate-500">Regarding: {String(e.about)}</p>
-              <p className="mt-2 text-sm text-slate-700">{String(e.message)}</p>
-              <a href={`tel:${String(e.phone)}`} className="mt-2 inline-block text-sm font-bold text-[#0284c7]">📞 {String(e.phone)}</a>
+              <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{String(e.message)}</p>
+              {typeof e.attachment === 'string' && e.attachment && (
+                <AttachmentBadge
+                  url={e.attachment}
+                  name={typeof e.attachmentName === 'string' ? e.attachmentName : undefined}
+                />
+              )}
+              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                <a href={`tel:${String(e.phone)}`} className="inline-flex items-center gap-1.5 text-sm font-bold text-[#0284c7]">📞 {String(e.phone)}</a>
+                {e.fromRole && <span className="text-xs text-slate-400 capitalize">From: {String(e.fromRole)}</span>}
+              </div>
             </Card>
           ))}
         </div>

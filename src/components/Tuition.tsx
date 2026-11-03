@@ -1,5 +1,5 @@
-import { Star, MapPin, BookOpen } from 'lucide-react';
-import { tuitions } from '@/data/content';
+import { MapPin, BookOpen, IndianRupee } from 'lucide-react';
+import { useCollection, txt } from '@/lib/store';
 import { SectionHeading } from './SectionHeading';
 
 const modeStyle: Record<string, string> = {
@@ -9,6 +9,9 @@ const modeStyle: Record<string, string> = {
 };
 
 export function Tuition() {
+  // Newest tuition centres and tutors listed by coaching accounts.
+  const tuitions = useCollection('coaching').items.filter((c) => c.category === 'academic').slice(0, 8);
+
   return (
     <section id="tuition" className="section bg-gradient-to-b from-brand-50/50 via-brand-50/30 to-white">
       <div className="container-page">
@@ -19,39 +22,36 @@ export function Tuition() {
           subtitle="Online, offline and home tuition — plus chess, silambam and yoga."
         />
 
-        <div className="reveal-stagger rail mt-8 sm:mt-12 md:grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {tuitions.map((t) => (
-            <article
-              key={t.id}
-              className="card card-hover p-5 sm:p-6 flex flex-col"
-            >
-              <div className="flex items-center justify-between">
-                <span className={`chip ${modeStyle[t.mode]}`}>{t.mode}</span>
-                <span className="flex items-center gap-1 text-sm font-semibold text-amber-600">
-                  <Star className="h-4 w-4 fill-amber-500 text-amber-500" /> {t.rating}
-                </span>
-              </div>
+        {tuitions.length === 0 ? (
+          <p className="mt-8 text-center text-sm font-semibold text-ink-500">
+            No tuition centres listed yet. <a href="#/coaching/academic" className="text-brand-700">Coaching centres can add theirs here.</a>
+          </p>
+        ) : (
+          <div className="reveal-stagger rail mt-8 sm:mt-12 md:grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {tuitions.map((t) => (
+              <article key={t.id} className="card card-hover p-5 sm:p-6 flex flex-col">
+                <div className="flex items-center justify-between">
+                  <span className={`chip ${modeStyle[txt(t.mode)] ?? modeStyle.Offline}`}>{txt(t.mode)}</span>
+                  <span className="flex items-center gap-0.5 text-sm font-semibold text-emerald-700">
+                    <IndianRupee className="h-3.5 w-3.5" />{Number(t.charges).toLocaleString('en-IN')}/mo
+                  </span>
+                </div>
 
-              <h3 className="mt-4 font-display text-base font-bold text-ink-900 leading-snug">{t.name}</h3>
-              <p className="mt-1 text-sm text-ink-500">{t.tutor}</p>
+                <h3 className="mt-4 font-display text-base font-bold text-ink-900 leading-snug">{txt(t.name)}</h3>
+                <p className="mt-1 text-sm text-ink-500">{txt(t.providerType)} · {txt(t.experience)} yrs experience</p>
 
-              <div className="mt-3 space-y-1.5 text-sm text-ink-700">
-                <div className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-brand-500" /> {t.subject}</div>
-                <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-brand-500" /> {t.location}</div>
-              </div>
+                <div className="mt-3 space-y-1.5 text-sm text-ink-700">
+                  <div className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-brand-500" /> {txt(t.subjects)}</div>
+                  <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-brand-500" /> {txt(t.area)}, {txt(t.district)}</div>
+                </div>
 
-              <div className="mt-3 text-xs font-semibold text-ink-500">{t.level}</div>
+                {t.classes && <div className="mt-3 mb-5 text-xs font-semibold text-ink-500">{txt(t.classes)}</div>}
 
-              <div className="mt-4 mb-5 flex flex-wrap gap-1.5">
-                {t.skills.map((s) => (
-                  <span key={s} className="chip bg-slate-50 text-ink-700 ring-1 ring-slate-100">{s}</span>
-                ))}
-              </div>
-
-              <a href="#/coaching/academic" className="btn-outline text-sm mt-auto w-full">Enquire now</a>
-            </article>
-          ))}
-        </div>
+                <a href="#/coaching/academic" className="btn-outline text-sm mt-auto w-full">Enquire now</a>
+              </article>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

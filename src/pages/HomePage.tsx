@@ -20,13 +20,14 @@ export function HomePage() {
   return (
     <>
       <Hero />
+      <Events />
+      {/* "Built for every part of school life" */}
       <Features />
       <Schools />
       <TrustStrip />
       {showOnHome.courses && <Courses />}
       {showOnHome.teacherJobs && <Jobs />}
       <Tuition />
-      <Events />
       <Register />
       <About />
       <Contact />

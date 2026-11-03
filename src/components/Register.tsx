@@ -3,11 +3,14 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { roles, roleOrder, register, useSession, type Role } from '@/lib/auth';
 import { navigate } from '@/lib/router';
 import { districts } from '@/data/districts';
+import { verifyWithOtp } from './OtpDialog';
 
 const signupRoles = roleOrder.filter((r) => r !== 'admin');
 
 export function Register() {
   const [role, setRole] = useState<Role>('student');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const session = useSession();
   const active = roles[role];
 
@@ -68,17 +71,29 @@ export function Register() {
                 </div>
               ) : (
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
+                    if (busy) return;
                     const f = new FormData(e.currentTarget);
-                    register({
-                      role,
-                      name: String(f.get('name')),
-                      phone: String(f.get('phone')),
-                      email: String(f.get('email') ?? ''),
-                      district: String(f.get('district') ?? ''),
-                    });
-                    navigate(roles[role].home);
+                    setBusy(true);
+                    setError('');
+                    try {
+                      const data = {
+                        role,
+                        name: String(f.get('name')),
+                        phone: String(f.get('phone')),
+                        password: String(f.get('password') ?? ''),
+                        email: String(f.get('email') ?? ''),
+                        district: String(f.get('district') ?? ''),
+                      };
+                      // Verify the mobile number with an OTP, then create the account.
+                      await verifyWithOtp({ purpose: 'register', role, phone: data.phone, action: (otp) => register({ ...data, otp }) });
+                      navigate(roles[role].home);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+                    } finally {
+                      setBusy(false);
+                    }
                   }}
                   className="grid sm:grid-cols-2 gap-4"
                 >
@@ -106,11 +121,12 @@ export function Register() {
                   </div>
                   <div className="sm:col-span-2">
                     <label className="label" htmlFor="rpass">Create password</label>
-                    <input id="rpass" type="password" required minLength={6} className="input" />
+                    <input id="rpass" name="password" type="password" required minLength={6} autoComplete="new-password" className="input" />
                   </div>
 
-                  <button type="submit" className="btn-primary sm:col-span-2 mt-2">
-                    Create account <ArrowRight className="h-4 w-4" />
+                  {error && <p className="sm:col-span-2 text-sm font-semibold text-rose-600">{error}</p>}
+                  <button type="submit" disabled={busy} className="btn-primary sm:col-span-2 mt-2 disabled:opacity-70">
+                    {busy ? 'Sending OTP…' : <>Verify mobile &amp; create account <ArrowRight className="h-4 w-4" /></>}
                   </button>
                   <p className="sm:col-span-2 text-xs text-ink-500 text-center">
                     By continuing you agree to Padasala's Terms & Privacy Policy.

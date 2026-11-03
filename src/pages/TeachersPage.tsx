@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import { Briefcase, Search, UserPlus, Users } from 'lucide-react';
+import { Briefcase, Search, UserPlus } from 'lucide-react';
 import { useSession, openLogin } from '@/lib/auth';
-import { viewersOf } from '@/lib/access';
 import { useCollection, txt } from '@/lib/store';
 import { PageHero, Tabs, Card, DynamicForm, RequireRole, EmptyState, FilterSelect, EnquiryButton, EnquiryInbox } from '@/components/ui';
 import { JobCard, TeacherCard, MyPosts, grid } from '@/components/listings';
-import { TeachersForSchools } from './SchoolsPage';
 import { districts } from '@/data/districts';
 import { teacherProfileFields, jobTypes } from '@/data/forms';
 
-type Tab = 'vacancies' | 'post' | 'profiles';
+// Teacher profiles are shown to schools in their School Dashboard (see access.ts), not on this page.
+type Tab = 'vacancies' | 'post';
 
 export function TeachersPage() {
   const [tab, setTab] = useState<Tab>('vacancies');
@@ -28,7 +27,6 @@ export function TeachersPage() {
           tabs={[
             { id: 'vacancies', label: 'School Vacancies', icon: Search },
             { id: 'post', label: 'Post Your Job Requirement', icon: UserPlus },
-            { id: 'profiles', label: 'Teacher Profiles (Schools)', icon: Users },
           ]}
         />
         <div className="mt-6">
@@ -36,11 +34,6 @@ export function TeachersPage() {
           {tab === 'post' && (
             <RequireRole allow={['teacher']} reason="Login as a teacher to post your job requirement">
               <PostProfile />
-            </RequireRole>
-          )}
-          {tab === 'profiles' && (
-            <RequireRole allow={viewersOf('teacher')} reason="Teacher profiles are visible only to registered schools">
-              <TeachersForSchools />
             </RequireRole>
           )}
         </div>

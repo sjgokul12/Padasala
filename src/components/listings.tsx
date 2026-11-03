@@ -1,11 +1,13 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   MapPin, Briefcase, Clock, IndianRupee, CalendarDays, Building2, Package, Trophy, DoorOpen, BadgePercent,
-  Palette, Phone, GraduationCap, Star, Users, Trash2, MessageCircle, Share2, ExternalLink, Mail, Truck,
+  Palette, Phone, GraduationCap, Star, Users, Trash2, MessageCircle, Share2, ExternalLink, Mail, Truck, Pencil, CheckCircle2,
 } from 'lucide-react';
 import { type Post, txt, useCollection, type CollectionName } from '@/lib/store';
-import { useSession } from '@/lib/auth';
-import { Card, Chip, EmptyState, formatDate, maskPhone } from './ui';
+import { useSession, openLogin, getToken } from '@/lib/auth';
+import { api, backendEnabled } from '@/lib/api';
+import { canManage } from '@/lib/access';
+import { Card, Chip, EmptyState, Modal, DynamicForm, formatDate, maskPhone, AttachmentBadge, type FieldDef } from './ui';
 
 const Meta = ({ icon: Icon, children }: { icon: typeof MapPin; children: ReactNode }) => (
   <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-600">
@@ -60,6 +62,41 @@ const categoryTone: Record<string, 'sky' | 'amber' | 'violet' | 'emerald' | 'ros
   Sports: 'emerald', Competition: 'amber', Cultural: 'rose', Academic: 'sky', Workshop: 'violet', Seminar: 'violet', Exhibition: 'sky',
 };
 
+/**
+ * Register for an event (backend only). The server saves the registration and, when the WhatsApp Business API
+ * is set up, sends the invitation to the student's WhatsApp automatically.
+ */
+function RegisterForEvent({ post }: { post: Post }) {
+  const session = useSession();
+  const [state, setState] = useState<{ done: boolean; busy: boolean; msg: string }>({ done: !!post.registered, busy: false, msg: '' });
+  if (session && post.ownerId === session.id) return null;
+
+  const register = async () => {
+    if (!session) return openLogin('student');
+    setState((s) => ({ ...s, busy: true, msg: '' }));
+    try {
+      const r = await api<{ whatsapp: string }>('/api/events/register.php', { method: 'POST', body: { eventId: post.id }, token: getToken() });
+      setState({ done: true, busy: false, msg: r.whatsapp === 'sent' ? 'Invitation sent to your WhatsApp.' : 'You are registered.' });
+    } catch (e) {
+      setState({ done: false, busy: false, msg: e instanceof Error ? e.message : 'Could not register. Please try again.' });
+    }
+  };
+
+  return (
+    <div className="col-span-2">
+      <button
+        type="button"
+        onClick={register}
+        disabled={state.done || state.busy}
+        className={state.done ? 'btn-outline w-full text-sm py-2 opacity-80' : 'btn-primary w-full text-sm py-2.5'}
+      >
+        {state.done ? <><CheckCircle2 className="h-4 w-4" /> Registered</> : state.busy ? 'Please wait…' : 'Register for this event'}
+      </button>
+      {state.msg && <p className={`mt-1.5 text-xs font-semibold ${state.done ? 'text-emerald-700' : 'text-rose-600'}`}>{state.msg}</p>}
+    </div>
+  );
+}
+
 export function EventCard({ post }: { post: Post }) {
   const date = txt(post.date);
   const d = new Date(`${date}T00:00:00`);
@@ -90,8 +127,12 @@ export function EventCard({ post }: { post: Post }) {
           <Meta icon={Building2}>{post.ownerName}{post.organizerType ? ` · ${txt(post.organizerType)}` : ''}</Meta>
         </div>
         {post.description && <p className="mt-2 text-sm text-slate-600 line-clamp-2">{txt(post.description)}</p>}
+        {backendEnabled && Number(post.registrations ?? 0) > 0 && (
+          <p className="mt-2 text-xs font-semibold text-emerald-700">{txt(post.registrations)} registered</p>
+        )}
         {!past && (
           <div className="mt-auto pt-4 grid grid-cols-[1fr_auto] gap-2">
+            {backendEnabled && <RegisterForEvent post={post} />}
             <a
               href={`https://wa.me/${waNumber(txt(post.whatsapp))}?text=${encodeURIComponent(inviteMsg)}`}
               target="_blank"
@@ -147,6 +188,13 @@ export function RequirementCard({ post, action }: { post: Post; action?: ReactNo
         {post.neededBy && <Meta icon={CalendarDays}>Needed by {formatDate(txt(post.neededBy))}</Meta>}
       </div>
       {post.details && <p className="mt-2 text-sm text-slate-600">{txt(post.details)}</p>}
+      {typeof post.attachment === 'string' && post.attachment && (
+        <AttachmentBadge
+          url={post.attachment}
+          name={typeof post.attachmentName === 'string' ? post.attachmentName : 'Specifications document'}
+          label="View specifications"
+        />
+      )}
       {action && <div className="mt-auto pt-4">{action}</div>}
     </Card>
   );
@@ -189,9 +237,10 @@ export function SchoolPostCard({ post }: { post: Post }) {
 
 /* ---------- Coaching centre / tutor ---------- */
 
-export function CoachingCard({ post }: { post: Post }) {
+export function CoachingCard({ post, manage }: { post: Post; manage?: ReactNode }) {
   return (
     <Card className="p-4 sm:p-5 flex flex-col">
+      {manage}
       <div className="flex items-start justify-between gap-2">
         <Chip tone={post.providerType === 'Individual Tutor' ? 'emerald' : post.providerType === 'Institute' ? 'violet' : 'sky'}>{txt(post.providerType)}</Chip>
         <Chip tone="slate">{txt(post.mode)}</Chip>
@@ -283,6 +332,13 @@ export function TeacherCard({ post, action }: { post: Post; action?: ReactNode }
         {post.availability && <Meta icon={CalendarDays}>Available: {txt(post.availability)}</Meta>}
       </div>
       {post.about && <p className="mt-2 text-sm text-slate-600">{txt(post.about)}</p>}
+      {typeof post.attachment === 'string' && post.attachment && (
+        <AttachmentBadge
+          url={post.attachment}
+          name={typeof post.attachmentName === 'string' ? post.attachmentName : 'Resume / CV'}
+          label="View Resume / CV"
+        />
+      )}
       {action && <div className="mt-auto pt-4 flex flex-wrap gap-2">{action}</div>}
     </Card>
   );
@@ -311,14 +367,121 @@ export function VendorCard({ post, action }: { post: Post; action?: ReactNode })
         {post.email && <Meta icon={Mail}>{txt(post.email)}</Meta>}
       </div>
       {post.about && <p className="mt-2 text-sm text-slate-600">{txt(post.about)}</p>}
+      {typeof post.attachment === 'string' && post.attachment && (
+        <AttachmentBadge
+          url={post.attachment}
+          name={typeof post.attachmentName === 'string' ? post.attachmentName : 'Company catalogue / brochure'}
+          label="View catalogue / brochure"
+        />
+      )}
       {action && <div className="mt-auto pt-4 flex flex-wrap gap-2">{action}</div>}
     </Card>
   );
 }
 
+/* ---------- Edit / Delete for the owner (or admin) ---------- */
+
+/**
+ * Edit and Delete buttons for a post. Renders nothing unless the logged-in user posted it.
+ * Edit reuses the posting form, filled in with the current details.
+ */
+export function ManageActions({ post, collection, fields, what = 'listing' }: { post: Post; collection: CollectionName; fields: FieldDef[]; what?: string }) {
+  const session = useSession();
+  const store = useCollection(collection);
+  const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+  if (!canManage(post, session)) return null;
+
+  const remove = async () => {
+    setDeleting(true);
+    setError('');
+    try {
+      await store.remove(post.id);
+      setConfirming(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="-mt-1 mb-3 flex items-center justify-end gap-2">
+        <span className="mr-auto inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-emerald-600">● Your listing</span>
+        <StatusBadge post={post} />
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-bold text-[#0284c7] ring-1 ring-sky-100 transition hover:bg-sky-100"
+        >
+          <Pencil className="h-3.5 w-3.5" /> Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 ring-1 ring-rose-100 transition hover:bg-rose-100"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> Delete
+        </button>
+      </div>
+
+      <Modal open={editing} onClose={() => setEditing(false)} title={`Edit ${what}`} wide>
+        <DynamicForm
+          fields={fields}
+          initial={post}
+          reset={false}
+          submitLabel="Save changes"
+          onSubmit={async (v) => {
+            await store.update(post.id, v);
+            window.setTimeout(() => setEditing(false), 600);
+          }}
+        />
+      </Modal>
+
+      <Modal open={confirming} onClose={() => setConfirming(false)} title={`Delete this ${what}?`}>
+        <p className="text-sm text-slate-600">
+          <b className="text-[#0b1f33]">{txt(post.name ?? post.title ?? post.company)}</b> will be removed for everyone. This cannot be undone.
+        </p>
+        {error && <p className="mt-3 text-sm font-semibold text-rose-600">{error}</p>}
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
+          <button type="button" onClick={() => setConfirming(false)} className="btn-outline text-sm">Cancel</button>
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={remove}
+            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-rose-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-rose-500/25 hover:bg-rose-700 disabled:opacity-70"
+          >
+            <Trash2 className="h-4 w-4" /> {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
+/** Approved by the admin (or demo data without a review status) — safe to show in public lists. */
+export const isPublished = (post: Post) => post.status === undefined || post.status === 'approved';
+
+/** Admin review state of a listing, shown to its owner (schools, coaching, events, teachers and vendors are checked first). */
+export function StatusBadge({ post }: { post: Post }) {
+  if (post.status === 'pending') return <Chip tone="amber">Waiting for admin approval</Chip>;
+  if (post.status === 'rejected') return <Chip tone="rose">Not approved</Chip>;
+  return null;
+}
+
 /* ---------- The logged-in user's own posts, with delete ---------- */
 
-export function MyPosts({ collection, kind, render, title = 'Your posts' }: { collection: CollectionName; kind?: string; render: (p: Post) => ReactNode; title?: string }) {
+export function MyPosts({ collection, kind, render, title = 'Your posts', hideDelete }: {
+  collection: CollectionName;
+  kind?: string;
+  render: (p: Post) => ReactNode;
+  title?: string;
+  /** Set when the rendered card has its own Edit/Delete buttons. */
+  hideDelete?: boolean;
+}) {
   const session = useSession();
   const store = useCollection(collection);
   if (!session) return null;
@@ -333,13 +496,13 @@ export function MyPosts({ collection, kind, render, title = 'Your posts' }: { co
           {mine.map((p) => (
             <div key={p.id} className="relative">
               {render(p)}
-              <button
-                onClick={() => window.confirm('Delete this post?') && store.remove(p.id)}
+              {!hideDelete && <button
+                onClick={() => window.confirm('Delete this post?') && store.remove(p.id).catch((e: Error) => window.alert(e.message))}
                 aria-label="Delete post"
                 className="absolute -right-1.5 -top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-white text-rose-500 shadow-md ring-1 ring-rose-100 hover:bg-rose-50"
               >
                 <Trash2 className="h-4 w-4" />
-              </button>
+              </button>}
             </div>
           ))}
         </div>
@@ -347,5 +510,6 @@ export function MyPosts({ collection, kind, render, title = 'Your posts' }: { co
     </div>
   );
 }
+
 
 export const grid = 'reveal-stagger grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3';

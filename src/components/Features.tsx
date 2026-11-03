@@ -23,8 +23,19 @@ const tones = [
   { card: 'from-indigo-100 via-indigo-50 to-white ring-indigo-200/70', icon: 'from-indigo-400 to-blue-700 shadow-indigo-500/40', blob: 'bg-indigo-300/50', title: 'group-hover:text-indigo-700', arrow: 'text-indigo-600 bg-indigo-100' },
 ];
 
-// Where each card leads.
-const links = ['#/schools', '#/students', '#/teachers', '#/coaching/academic', '#/events', '#/schools/updates'];
+// Where each card leads (by card title).
+const links: Record<string, string> = {
+  'Discover Verified Schools': '#/schools',
+  'NEET & JEE Courses': '#/students',
+  'Teacher Job Portal': '#/teachers',
+  'Tuition & Skill Classes': '#/coaching/academic',
+  'School Events & Competitions': '#/events',
+  'Admissions Made Simple': '#/schools/updates',
+};
+
+// Cards kept in the data but not shown on the home page.
+const hiddenOnHome = new Set(['Teacher Job Portal']);
+const homeFeatures = features.filter((f) => !hiddenOnHome.has(f.title));
 
 export function Features() {
   return (
@@ -38,14 +49,14 @@ export function Features() {
         />
 
         <div className="reveal-stagger mt-8 sm:mt-12 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
-          {features.map((f, i) => {
+          {homeFeatures.map((f, i) => {
             const Icon = iconMap[f.icon] ?? School;
             const t = tones[i % tones.length];
             return (
               <a
                 key={f.title}
-                href={links[i]}
-                className={`group relative overflow-hidden rounded-[22px] sm:rounded-[28px] bg-gradient-to-br ${t.card} ring-1 p-4 sm:p-7 shadow-[0_14px_34px_-18px_rgba(15,23,42,0.25)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_45px_-18px_rgba(15,23,42,0.35)]`}
+                href={links[f.title] ?? '#/'}
+                className={`group relative overflow-hidden odd:last:col-span-2 lg:odd:last:col-span-1 rounded-[22px] sm:rounded-[28px] bg-gradient-to-br ${t.card} ring-1 p-4 sm:p-7 shadow-[0_14px_34px_-18px_rgba(15,23,42,0.25)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_45px_-18px_rgba(15,23,42,0.35)]`}
               >
                 <span className={`pointer-events-none absolute -right-8 -top-8 h-24 w-24 sm:h-32 sm:w-32 rounded-full ${t.blob} blur-2xl transition-transform duration-500 group-hover:scale-125`} />
                 <div className="relative flex items-start justify-between">

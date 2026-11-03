@@ -186,14 +186,6 @@ export function Header() {
             <div className="hidden lg:flex items-center gap-2">
               <DownloadBadge />
               <AccountMenu />
-              {!session && (
-                <button
-                  onClick={() => openLogin('student', 'register')}
-                  className="hidden xl:inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#009bf8] via-[#007cf8] to-[#0062f5] px-5 py-2 text-sm font-semibold text-white shadow-md shadow-sky-500/25 transition-all hover:shadow-lg hover:-translate-y-0.5"
-                >
-                  Register
-                </button>
-              )}
             </div>
 
             {/* Mobile actions */}

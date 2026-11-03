@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { CalendarDays, PlusCircle, MapPin } from 'lucide-react';
+import { CalendarDays, PlusCircle, MapPin, Clock, CheckCircle2 } from 'lucide-react';
 import { useSession } from '@/lib/auth';
-import { useCollection, txt } from '@/lib/store';
+import { useCollection, txt, type Post } from '@/lib/store';
 import { PageHero, Card, DynamicForm, RequireRole, EmptyState, FilterSelect, Modal } from '@/components/ui';
-import { EventCard, MyPosts, todayIso, grid } from '@/components/listings';
+import { EventCard, MyPosts, StatusBadge, todayIso, grid, isPublished } from '@/components/listings';
 import { districts } from '@/data/districts';
 import { eventFields, eventCategories } from '@/data/forms';
 
@@ -17,6 +17,7 @@ export function EventsPage() {
 
   const today = todayIso();
   const list = items
+    .filter(isPublished)
     .filter((e) => (when === 'upcoming' ? txt(e.date) >= today : txt(e.date) < today))
     .filter((e) => !district || e.district === district)
     .filter((e) => !category || e.category === category)
@@ -71,7 +72,18 @@ export function EventsPage() {
           ))
         )}
 
-        {canPost && <MyPosts collection="events" render={(p) => <EventCard post={p} />} title="Events you posted" />}
+        {canPost && (
+          <MyPosts
+            collection="events"
+            render={(p) => (
+              <div>
+                {p.status && p.status !== 'approved' && <div className="mb-2"><StatusBadge post={p} /></div>}
+                <EventCard post={p} />
+              </div>
+            )}
+            title="Events you posted"
+          />
+        )}
       </div>
 
       <Modal open={posting} onClose={() => setPosting(false)} title="Post an event" wide>
@@ -86,19 +98,40 @@ export function EventsPage() {
 function PostEvent({ onDone }: { onDone: () => void }) {
   const session = useSession()!;
   const store = useCollection('events');
+  const [submitted, setSubmitted] = useState<Post | null>(null);
+
+  if (submitted) {
+    const waiting = submitted.status === 'pending';
+    return (
+      <div className="py-4 text-center">
+        <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${waiting ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+          {waiting ? <Clock className="h-7 w-7" /> : <CheckCircle2 className="h-7 w-7" />}
+        </span>
+        <h3 className="mt-3 font-display text-lg font-extrabold text-[#0b1f33]">{waiting ? 'Event submitted for approval' : 'Event published'}</h3>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-600">
+          {waiting
+            ? <>“{txt(submitted.title)}” will appear on the home screen and the Events page as soon as the Padasala team approves it. You can see it under “Events you posted”.</>
+            : <>“{txt(submitted.title)}” is now visible to students.</>}
+        </p>
+        <button onClick={onDone} className="btn-primary mt-5 px-6">OK</button>
+      </div>
+    );
+  }
+
   return (
     <>
       <p className="mb-4 flex items-start gap-2 text-sm text-slate-500">
         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#0284c7]" />
         Students see events by date and district. The WhatsApp number receives invitation requests from students.
+        New events are checked by the Padasala team before they appear publicly.
       </p>
       <Card className="p-0 ring-0 shadow-none">
         <DynamicForm
           fields={eventFields}
-          submitLabel="Publish event"
-          onSubmit={(v) => {
-            store.add({ ...v, organizerType: session.role === 'school' ? 'School' : 'Event Organizer' }, session);
-            window.setTimeout(onDone, 900);
+          submitLabel="Submit event"
+          onSubmit={async (v) => {
+            const item = await store.add({ ...v, organizerType: session.role === 'school' ? 'School' : 'Event Organizer' }, session);
+            setSubmitted(item);
           }}
         />
       </Card>
